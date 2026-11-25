@@ -25,6 +25,7 @@
 | OpenStreetMap (bản trích Việt Nam của Geofabrik) | Tuyến, trạm, hình dạng tuyến | © OpenStreetMap contributors, giấy phép ODbL |
 | xe-buyt.com | Giờ hoạt động và giãn cách chuyến của một số tuyến buýt TP.HCM | Chỉ bổ sung khi OSM chưa có |
 | Ô bản đồ OpenStreetMap, Nominatim | Bản đồ nền, tìm địa danh | Cần mạng |
+| OSRM (routing.openstreetmap.de) | Đường đi bộ theo phố, chỉ khi người dùng bấm tải hoặc bật trong Cài đặt | Cần mạng, gửi toạ độ hai đầu chặng đi bộ |
 
 Hiện có 923 chiều tuyến và 15.176 trạm: Hà Nội, TP.HCM, Đà Nẵng và hơn 20 tỉnh/thành khác; metro gồm tuyến 1 (TP.HCM), 2A và 3 (Hà Nội).
 
