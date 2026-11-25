@@ -52,8 +52,8 @@ String itineraryShareText(
   }
   b.write(
     tr(
-      'Thời gian và giá vé là ước tính. Lộ Trình Việt, dữ liệu © OpenStreetMap.',
-      'Times and fares are estimates. Lộ Trình Việt, data © OpenStreetMap.',
+      'Thời gian và giá vé là ước tính. Ghee, dữ liệu © OpenStreetMap.',
+      'Times and fares are estimates. Ghee, data © OpenStreetMap.',
     ),
   );
   return b.toString();

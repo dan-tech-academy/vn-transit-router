@@ -35,7 +35,7 @@ class TransitApp extends StatelessWidget {
     );
     final app = context.watch<AppState>();
     return MaterialApp(
-      title: 'Lộ Trình Việt',
+      title: 'Ghee',
       themeMode: app.themeMode,
       locale: Locale(app.lang),
       supportedLocales: const [Locale('vi'), Locale('en')],

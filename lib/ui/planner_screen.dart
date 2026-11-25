@@ -200,7 +200,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'Lộ Trình Việt',
+                    'Ghee',
                     style: Theme.of(context).textTheme.titleLarge
                         ?.copyWith(fontWeight: FontWeight.w800),
                   ),

@@ -1,4 +1,4 @@
-# Lộ Trình Việt (vn-transit-router)
+# Ghee - Metro, Bus, Train (vn-transit-router)
 
 Ứng dụng Flutter (Android + iOS) tìm đường bằng phương tiện công cộng ở Việt Nam: xe buýt, metro, buýt sông và đi bộ.
 
@@ -82,7 +82,7 @@ python3 tool/fix_routes.py             # sửa riêng từng tuyến theo tool/r
 
 ## Phát hành
 
-Mã ứng dụng: `dev.dantech.vn_transit` (Android), `dev.dantech.vnTransit` (iOS). Phiên bản đặt ở `version:` trong `pubspec.yaml`.
+Tên trên cửa hàng: **Ghee - Metro, Bus, Train**; tên dưới biểu tượng và trong app: **Ghee**. Mã ứng dụng: `dev.dantech.vn_transit` (Android), `dev.dantech.vnTransit` (iOS). Phiên bản đặt ở `version:` trong `pubspec.yaml`.
 
 **Android:** tạo khoá một lần, rồi chép `android/key.properties.example` thành `android/key.properties` và điền thông tin (hai tệp này không được commit).
 
