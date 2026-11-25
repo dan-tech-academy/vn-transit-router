@@ -4,8 +4,12 @@ import 'package:latlong2/latlong.dart';
 
 import '../data/geo.dart';
 import '../data/transit_data.dart';
+import '../l10n.dart';
 
 const walkColor = Color(0xFF64748B);
+
+/// Persistent folder for viewed map tiles; set at startup.
+String? tileCacheDir;
 
 Color modeColor(TransitRoute r) {
   if (r.colour.startsWith('#') && r.colour.length == 7) {
@@ -34,8 +38,8 @@ int fmtMinutes(int seconds) =>
 
 String fmtDuration(int seconds) {
   final m = fmtMinutes(seconds);
-  if (m < 60) return '$m phút';
-  return '${m ~/ 60} giờ ${m % 60} phút';
+  if (m < 60) return tr('$m phút', '$m min');
+  return tr('${m ~/ 60} giờ ${m % 60} phút', '${m ~/ 60} h ${m % 60} min');
 }
 
 String fmtDistance(num metres) => metres < 1000
@@ -104,6 +108,15 @@ class OsmTileLayer extends StatelessWidget {
     urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
     userAgentPackageName: 'dev.dantech.vn_transit',
     maxZoom: 19,
+    // Tiles the user has viewed stay on the device and show when offline.
+    tileProvider: NetworkTileProvider(
+      cachingProvider: tileCacheDir == null
+          ? null
+          : BuiltInMapCachingProvider.getOrCreateInstance(
+              cacheDirectory: tileCacheDir,
+              maxCacheSize: 300000000,
+            ),
+    ),
   );
 }
 
@@ -112,7 +125,10 @@ class OsmAttribution extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => const SimpleAttributionWidget(
-    source: Text('OpenStreetMap contributors'),
+    source: Text(
+      'OpenStreetMap contributors',
+      style: TextStyle(color: Colors.black87),
+    ),
     backgroundColor: Color(0xCCFFFFFF),
   );
 }
@@ -153,3 +169,6 @@ Marker pinMarker(Geo g, Color color, IconData icon) => Marker(
     ],
   ),
 );
+
+String fmtDateTime(DateTime t) =>
+    '${t.day.toString().padLeft(2, '0')}/${t.month.toString().padLeft(2, '0')} ${fmtClock(t)}';

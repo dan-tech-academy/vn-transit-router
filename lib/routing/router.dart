@@ -41,6 +41,9 @@ class RouterConfig {
 
 enum LegKind { walk, ride }
 
+/// What to favour when ranking itineraries.
+enum RoutePreference { fastest, lessWalking, fewerTransfers }
+
 class Leg {
   final LegKind kind;
   final int seconds;
@@ -83,6 +86,15 @@ class Leg {
   }) : kind = LegKind.ride;
 
   int get stopCount => toPos - fromPos;
+
+  /// This walk along a different path.
+  Leg rewalk(List<Geo> path, int metres, int seconds) => Leg.walk(
+    seconds: seconds,
+    metres: metres,
+    path: path,
+    fromName: fromName,
+    toName: toName,
+  );
 }
 
 class Itinerary {
@@ -150,18 +162,21 @@ class TransitRouter {
     String destName = 'Điểm đến',
     int maxResults = 5,
     DateTime? departAt,
+    RoutePreference preference = RoutePreference.fastest,
+    Set<TransitMode>? modes,
   }) {
-    _closed = departAt == null
-        ? const {}
-        : {
-            for (final r in data.routes)
-              // Boarding happens after the average wait.
-              if (!r.inServiceAt(
-                departAt,
-                wait: Duration(seconds: waitSeconds(r)),
-              ))
-                r.index,
-          };
+    _preference = preference;
+    _closed = {
+      for (final r in data.routes)
+        if ((modes != null && !modes.contains(r.mode)) ||
+            // Boarding happens after the average wait.
+            (departAt != null &&
+                !r.inServiceAt(
+                  departAt,
+                  wait: Duration(seconds: waitSeconds(r)),
+                )))
+          r.index,
+    };
     final results = <Itinerary>[];
     final seen = <String>{};
     void add(Itinerary? it) {
@@ -180,8 +195,8 @@ class TransitRouter {
       ),
     ]);
 
-    final access = _access(origin);
-    final egress = _access(dest);
+    final access = _access(origin, modes);
+    final egress = _access(dest, modes);
     if (access.isNotEmpty && egress.isNotEmpty) {
       final banned = <String>{};
       final first = _raptor(
@@ -220,10 +235,25 @@ class TransitRouter {
   }
 
   // Generalised cost: time plus penalties for transfers and long walks.
-  int _score(Itinerary it) =>
-      it.seconds + it.transfers * 300 + (it.walkMetres * 0.3).round();
+  int _score(Itinerary it) => switch (_preference) {
+    RoutePreference.fastest =>
+      it.seconds + it.transfers * 300 + (it.walkMetres * 0.3).round(),
+    RoutePreference.lessWalking =>
+      it.seconds + it.transfers * 300 + (it.walkMetres * 3).round(),
+    RoutePreference.fewerTransfers =>
+      it.seconds + it.transfers * 1800 + (it.walkMetres * 0.3).round(),
+  };
 
-  List<(Stop, double)> _access(Geo p) {
+  RoutePreference _preference = RoutePreference.fastest;
+
+  List<(Stop, double)> _access(Geo p, Set<TransitMode>? modes) {
+    if (modes != null) {
+      // Stations of a wanted mode are sparse: look further and skip the rest.
+      return [
+        for (final e in data.stopsNear(p, config.accessRadiusMax))
+          if (e.$1.routes.any((r) => modes.contains(data.routes[r].mode))) e,
+      ].take(12).toList();
+    }
     var near = data.stopsNear(p, config.accessRadius, limit: 60);
     if (near.length < 3) {
       near = data.stopsNear(p, config.accessRadiusMax, limit: 12);

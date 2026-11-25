@@ -5,8 +5,9 @@ import 'package:provider/provider.dart';
 import '../app_state.dart';
 import '../data/geo.dart';
 import '../data/transit_data.dart';
+import '../l10n.dart';
 import 'common.dart';
-import 'route_detail_screen.dart';
+import 'stop_detail_screen.dart';
 
 class NearbyScreen extends StatefulWidget {
   const NearbyScreen({super.key});
@@ -40,50 +41,9 @@ class _NearbyScreenState extends State<NearbyScreen> {
     }
   }
 
-  void _showStop(Stop s) {
-    final data = context.read<AppState>().data!;
-    final routes = s.routes.map((i) => data.routes[i]).toList();
-    showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (context) => SafeArea(
-        child: ListView(
-          shrinkWrap: true,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-              child: Text(
-                s.displayName,
-                style: Theme.of(context).textTheme.titleLarge
-                    ?.copyWith(fontWeight: FontWeight.w700),
-              ),
-            ),
-            for (final r in routes)
-              ListTile(
-                leading: SizedBox(
-                  width: 76,
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: LineBadge(r),
-                  ),
-                ),
-                title: Text(
-                  r.title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => RouteDetailScreen(route: r),
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
+  void _showStop(Stop s) =>
+      Navigator.of(context)
+          .push(MaterialPageRoute(builder: (_) => StopDetailScreen(stop: s)));
 
   @override
   Widget build(BuildContext context) {
@@ -91,7 +51,7 @@ class _NearbyScreenState extends State<NearbyScreen> {
     final data = context.read<AppState>().data!;
     final near = data.stopsNear(_center, 600);
     return Scaffold(
-      appBar: AppBar(title: const Text('Trạm gần đây')),
+      appBar: AppBar(title: Text(tr('Trạm gần đây', 'Nearby stops'))),
       floatingActionButton: FloatingActionButton(
         key: const Key('locate'),
         onPressed: _locating ? null : _locate,
@@ -159,17 +119,23 @@ class _NearbyScreenState extends State<NearbyScreen> {
             color: t.colorScheme.surfaceContainerHigh,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Text(
-              '${near.length} trạm trong bán kính 600 m quanh tâm bản đồ',
+              tr(
+                '${near.length} trạm trong bán kính 600 m quanh tâm bản đồ',
+                '${near.length} stops within 600 m of the map centre',
+              ),
               style: t.textTheme.labelLarge,
             ),
           ),
           Expanded(
             child: near.isEmpty
-                ? const Center(
+                ? Center(
                     child: Padding(
-                      padding: EdgeInsets.all(24),
+                      padding: const EdgeInsets.all(24),
                       child: Text(
-                        'Không có trạm nào quanh đây. Kéo bản đồ hoặc bấm nút định vị.',
+                        tr(
+                          'Không có trạm nào quanh đây. Kéo bản đồ hoặc bấm nút định vị.',
+                          'No stops around here. Drag the map or tap the locate button.',
+                        ),
                         textAlign: TextAlign.center,
                       ),
                     ),
@@ -197,7 +163,7 @@ class _NearbyScreenState extends State<NearbyScreen> {
                           overflow: TextOverflow.ellipsis,
                         ),
                         subtitle: Text(
-                          'Tuyến ${labels.take(10).join(', ')}',
+                          '${tr('Tuyến', 'Lines')} ${labels.take(10).join(', ')}',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),

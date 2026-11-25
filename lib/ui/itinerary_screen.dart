@@ -1,13 +1,67 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 
+import '../app_state.dart';
+import '../l10n.dart';
 import '../routing/router.dart';
 import '../services/geocoder.dart';
 import 'common.dart';
 import 'route_detail_screen.dart';
+import 'stop_detail_screen.dart';
 
-class ItineraryScreen extends StatelessWidget {
+/// Plain-text summary of an itinerary for sharing.
+String itineraryShareText(
+  Itinerary it,
+  Place from,
+  Place to,
+  DateTime departAt,
+) {
+  final b = StringBuffer()
+    ..writeln('${AppState.placeName(from)} → ${AppState.placeName(to)}')
+    ..writeln(
+      '${fmtClock(departAt)} – ${fmtClock(departAt.add(Duration(seconds: it.seconds)))}'
+      ' (${fmtDuration(it.seconds)})'
+      '${it.fare > 0 ? ' · ${tr('vé', 'fare')} ~${fmtMoney(it.fare)}' : ''}',
+    );
+  var clock = departAt;
+  var n = 1;
+  for (final l in it.legs) {
+    final at = fmtClock(clock);
+    clock = clock.add(Duration(seconds: l.seconds + l.waitSeconds));
+    if (l.kind == LegKind.walk) {
+      b.writeln(
+        tr(
+          '$n. $at Đi bộ ${fmtDistance(l.metres)} đến ${_name(l.toName)}',
+          '$n. $at Walk ${fmtDistance(l.metres)} to ${_name(l.toName)}',
+        ),
+      );
+    } else {
+      final r = l.route!;
+      b.writeln(
+        tr(
+          '$n. $at ${r.modeLabel} ${r.ref} từ ${l.fromName} đến ${l.toName} (${l.stopCount} trạm)',
+          '$n. $at ${r.modeLabel} ${r.ref} from ${l.fromName} to ${l.toName} (${l.stopCount} stops)',
+        ),
+      );
+    }
+    n++;
+  }
+  b.write(
+    tr(
+      'Thời gian và giá vé là ước tính. Lộ Trình Việt, dữ liệu © OpenStreetMap.',
+      'Times and fares are estimates. Lộ Trình Việt, data © OpenStreetMap.',
+    ),
+  );
+  return b.toString();
+}
+
+String _name(String n) =>
+    n == AppState.myLocationName ? tr('Vị trí của tôi', 'My location') : n;
+
+class ItineraryScreen extends StatefulWidget {
   final Itinerary itinerary;
   final Place from;
   final Place to;
@@ -19,6 +73,53 @@ class ItineraryScreen extends StatelessWidget {
     required this.to,
     required this.departAt,
   });
+
+  @override
+  State<ItineraryScreen> createState() => _ItineraryScreenState();
+}
+
+class _ItineraryScreenState extends State<ItineraryScreen> {
+  late Itinerary itinerary = widget.itinerary;
+  Place get from => widget.from;
+  Place get to => widget.to;
+  DateTime get departAt => widget.departAt;
+
+  /// null: loading, true: walks follow streets, false: straight lines.
+  bool? _streets = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final app = context.read<AppState>();
+    if (app.streetWalking &&
+        itinerary.legs.any((l) => l.kind == LegKind.walk && l.metres > 0)) {
+      _streets = null;
+      _loadStreets(app);
+    }
+  }
+
+  Future<void> _loadStreets(AppState app) async {
+    final speed = app.router!.config.walkSpeed;
+    final legs = await Future.wait([
+      for (final l in itinerary.legs)
+        if (l.kind == LegKind.walk && l.path.length >= 2 && l.metres > 0)
+          app.walkRouter
+              .route(l.path.first, l.path.last)
+              .then(
+                (w) => w == null
+                    ? null
+                    : l.rewalk(w.path, w.metres, (w.metres / speed).round()),
+              )
+        else
+          Future<Leg?>.value(l),
+    ]);
+    if (!mounted) return;
+    setState(() {
+      // Keep the estimate unless every walk was routed.
+      _streets = !legs.contains(null);
+      if (_streets!) itinerary = Itinerary([for (final l in legs) l!]);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,9 +157,19 @@ class ItineraryScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          '${fmtDuration(it.seconds)} · ${from.name} → ${to.name}',
+          '${fmtDuration(it.seconds)} · ${AppState.placeName(from)} → ${AppState.placeName(to)}',
           style: t.textTheme.titleMedium,
         ),
+        actions: [
+          IconButton(
+            key: const Key('share'),
+            tooltip: tr('Chia sẻ', 'Share'),
+            icon: const Icon(Icons.share_rounded),
+            onPressed: () => SharePlus.instance.share(
+              ShareParams(text: itineraryShareText(it, from, to, departAt)),
+            ),
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -94,9 +205,18 @@ class ItineraryScreen extends StatelessWidget {
               [
                 '${fmtClock(departAt)} – ${fmtClock(departAt.add(Duration(seconds: it.seconds)))}',
                 if (!it.walkOnly)
-                  it.transfers == 0 ? 'Đi thẳng' : '${it.transfers} lần chuyển',
-                'Đi bộ ${fmtDistance(it.walkMetres)}',
-                if (it.fare > 0) 'Vé ~${fmtMoney(it.fare)}',
+                  it.transfers == 0
+                      ? tr('Đi thẳng', 'Direct')
+                      : tr(
+                          '${it.transfers} lần chuyển',
+                          '${it.transfers} transfer${it.transfers > 1 ? 's' : ''}',
+                        ),
+                tr(
+                  'Đi bộ ${fmtDistance(it.walkMetres)}',
+                  'Walk ${fmtDistance(it.walkMetres)}',
+                ),
+                if (it.fare > 0)
+                  tr('Vé ~${fmtMoney(it.fare)}', 'Fare ~${fmtMoney(it.fare)}'),
               ].join(' · '),
               style: t.textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w600,
@@ -115,8 +235,13 @@ class ItineraryScreen extends StatelessWidget {
                 ..._steps(context),
                 const SizedBox(height: 12),
                 Text(
-                  'Thời gian và giá vé là ước tính từ quãng đường và tần suất tuyến, '
-                  'không phải lịch chạy thực tế. Đường đi bộ vẽ theo đường thẳng.',
+                  '${tr('Thời gian và giá vé là ước tính từ quãng đường và tần suất tuyến, không phải lịch chạy thực tế.', 'Times and fares are estimated from distance and line frequency, not real timetables.')} '
+                  '${switch (_streets) {
+                    null => tr('Đang tải đường đi bộ theo phố...', 'Loading street walking paths...'),
+                    true => tr('Đường đi bộ theo phố từ OSRM (routing.openstreetmap.de).', 'Street walking paths from OSRM (routing.openstreetmap.de).'),
+                    false => tr('Đường đi bộ vẽ theo đường thẳng.', 'Walking is drawn as straight lines.'),
+                  }}',
+                  key: const Key('walk-note'),
                   style: t.textTheme.bodySmall?.copyWith(
                     color: t.colorScheme.onSurfaceVariant,
                   ),
@@ -148,7 +273,7 @@ class ItineraryScreen extends StatelessWidget {
         icon: Icons.location_on,
         last: true,
         child: Text(
-          to.name,
+          AppState.placeName(to),
           style: const TextStyle(fontWeight: FontWeight.w700),
         ),
       ),
@@ -164,10 +289,16 @@ class ItineraryScreen extends StatelessWidget {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(l.fromName, style: const TextStyle(fontWeight: FontWeight.w700)),
+        Text(
+          _name(l.fromName),
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
         const SizedBox(height: 4),
         Text(
-          'Đi bộ ${fmtDistance(l.metres)} (khoảng ${fmtDuration(l.seconds)}) đến ${l.toName}',
+          tr(
+            'Đi bộ ${fmtDistance(l.metres)} (khoảng ${fmtDuration(l.seconds)}) đến ${_name(l.toName)}',
+            'Walk ${fmtDistance(l.metres)} (about ${fmtDuration(l.seconds)}) to ${_name(l.toName)}',
+          ),
         ),
       ],
     ),
@@ -176,6 +307,13 @@ class ItineraryScreen extends StatelessWidget {
   Widget _rideStep(BuildContext context, Leg l, DateTime start) {
     final r = l.route!;
     final t = Theme.of(context);
+    final data = context.read<AppState>().data!;
+    void openStop(int pos) => Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => StopDetailScreen(stop: data.stops[r.stops[pos]]),
+      ),
+    );
+    final towards = r.to.isEmpty ? r.title : r.to;
     return _Step(
       time: fmtClock(start),
       color: modeColor(r),
@@ -183,7 +321,13 @@ class ItineraryScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(l.fromName, style: const TextStyle(fontWeight: FontWeight.w700)),
+          InkWell(
+            onTap: () => openStop(l.fromPos),
+            child: Text(
+              l.fromName,
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+          ),
           const SizedBox(height: 6),
           InkWell(
             onTap: () => Navigator.of(context).push(
@@ -195,7 +339,10 @@ class ItineraryScreen extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    '${r.modeLabel} hướng ${r.to.isEmpty ? r.title : r.to}',
+                    tr(
+                      '${r.modeLabel} hướng $towards',
+                      '${r.modeLabel} towards $towards',
+                    ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -206,14 +353,21 @@ class ItineraryScreen extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'Chờ khoảng ${fmtDuration(l.waitSeconds)} · đi ${l.stopCount} trạm '
-            '(${fmtDistance(l.metres)}, ${fmtDuration(l.seconds)}) · vé ~${fmtMoney(l.fare)}',
+            tr(
+              'Chờ khoảng ${fmtDuration(l.waitSeconds)} · đi ${l.stopCount} trạm '
+                  '(${fmtDistance(l.metres)}, ${fmtDuration(l.seconds)}) · vé ~${fmtMoney(l.fare)}',
+              'Wait about ${fmtDuration(l.waitSeconds)} · ride ${l.stopCount} stops '
+                  '(${fmtDistance(l.metres)}, ${fmtDuration(l.seconds)}) · fare ~${fmtMoney(l.fare)}',
+            ),
             style: t.textTheme.bodySmall?.copyWith(
               color: t.colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: 4),
-          Text('Xuống tại ${l.toName}'),
+          InkWell(
+            onTap: () => openStop(l.toPos),
+            child: Text(tr('Xuống tại ${l.toName}', 'Get off at ${l.toName}')),
+          ),
         ],
       ),
     );

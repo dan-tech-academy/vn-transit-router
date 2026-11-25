@@ -3,11 +3,14 @@ import 'package:provider/provider.dart';
 
 import '../app_state.dart';
 import '../data/geo.dart';
+import '../data/transit_data.dart';
+import '../l10n.dart';
 import '../routing/router.dart';
 import '../services/geocoder.dart';
 import 'common.dart';
 import 'itinerary_screen.dart';
 import 'place_search_screen.dart';
+import 'settings_screen.dart';
 
 class PlannerScreen extends StatefulWidget {
   const PlannerScreen({super.key});
@@ -17,10 +20,13 @@ class PlannerScreen extends StatefulWidget {
 }
 
 class _PlannerScreenState extends State<PlannerScreen> {
-  Place? _from;
-  Place? _to;
   List<Itinerary>? _results;
   DateTime _searchedAt = DateTime.now();
+
+  /// Null means leave now.
+  DateTime? _departAt;
+  late final AppState _app;
+  int _tick = 0;
 
   static const _samples = [
     (
@@ -45,35 +51,114 @@ class _PlannerScreenState extends State<PlannerScreen> {
     ),
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    _app = context.read<AppState>();
+    _tick = _app.planTick;
+    _app.addListener(_onApp);
+  }
+
+  @override
+  void dispose() {
+    _app.removeListener(_onApp);
+    super.dispose();
+  }
+
+  void _onApp() {
+    if (_app.planTick == _tick) return;
+    _tick = _app.planTick;
+    _search();
+  }
+
   void _search() {
-    final app = context.read<AppState>();
-    if (_from == null || _to == null) return;
+    final from = _app.from, to = _app.to;
+    if (from == null || to == null || !mounted) return;
     setState(() {
-      _searchedAt = DateTime.now();
-      _results = app.router!.plan(
-        _from!.geo,
-        _to!.geo,
-        originName: _from!.name,
-        destName: _to!.name,
+      _searchedAt = _departAt ?? DateTime.now();
+      _results = _app.router!.plan(
+        from.geo,
+        to.geo,
+        originName: from.name,
+        destName: to.name,
         departAt: _searchedAt,
+        preference: _app.preference,
+        modes: _app.metroOnly ? const {TransitMode.metro} : null,
       );
     });
   }
 
+  Future<Place?> _choose(String title) => Navigator.of(context).push<Place>(
+    MaterialPageRoute(builder: (_) => PlaceSearchScreen(title: title)),
+  );
+
   Future<void> _pick(bool from) async {
-    final p = await Navigator.of(context).push<Place>(
-      MaterialPageRoute(
-        builder: (_) =>
-            PlaceSearchScreen(title: from ? 'Chọn điểm đi' : 'Chọn điểm đến'),
+    final p = await _choose(
+      from
+          ? tr('Chọn điểm đi', 'Choose origin')
+          : tr('Chọn điểm đến', 'Choose destination'),
+    );
+    if (p == null) return;
+    _app.planWith(from: from ? p : null, to: from ? null : p);
+  }
+
+  Future<void> _pickTime() async {
+    final now = DateTime.now();
+    final base = _departAt ?? now;
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              key: const Key('depart-now'),
+              leading: const Icon(Icons.bolt_rounded),
+              title: Text(tr('Đi ngay bây giờ', 'Leave now')),
+              onTap: () => Navigator.pop(context, 'now'),
+            ),
+            ListTile(
+              key: const Key('depart-pick'),
+              leading: const Icon(Icons.schedule_rounded),
+              title: Text(tr('Chọn ngày giờ khởi hành', 'Pick date and time')),
+              onTap: () => Navigator.pop(context, 'pick'),
+            ),
+          ],
+        ),
       ),
     );
-    if (p == null || !mounted) return;
-    setState(() => from ? _from = p : _to = p);
+    if (choice == null || !mounted) return;
+    if (choice == 'now') {
+      setState(() => _departAt = null);
+      _search();
+      return;
+    }
+    final d = await showDatePicker(
+      context: context,
+      initialDate: base,
+      firstDate: DateTime(now.year, now.month, now.day),
+      lastDate: now.add(const Duration(days: 60)),
+    );
+    if (d == null || !mounted) return;
+    final t = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(base),
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+        child: child!,
+      ),
+    );
+    if (t == null || !mounted) return;
+    setState(
+      () => _departAt = DateTime(d.year, d.month, d.day, t.hour, t.minute),
+    );
     _search();
   }
 
   @override
   Widget build(BuildContext context) {
+    final app = context.watch<AppState>();
     final scheme = Theme.of(context).colorScheme;
     return Scaffold(
       backgroundColor: scheme.surfaceContainerLowest,
@@ -81,7 +166,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              padding: const EdgeInsets.fromLTRB(16, 4, 4, 0),
               child: Row(
                 children: [
                   Icon(
@@ -95,21 +180,86 @@ class _PlannerScreenState extends State<PlannerScreen> {
                     style: Theme.of(context).textTheme.titleLarge
                         ?.copyWith(fontWeight: FontWeight.w800),
                   ),
+                  const Spacer(),
+                  IconButton(
+                    key: const Key('settings'),
+                    tooltip: tr('Cài đặt', 'Settings'),
+                    icon: const Icon(Icons.settings_outlined),
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                    ),
+                  ),
                 ],
               ),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: _endpointsCard(scheme),
+              child: _endpointsCard(app, scheme),
             ),
-            Expanded(child: _results == null ? _idle() : _resultList()),
+            _options(app),
+            Expanded(child: _results == null ? _idle(app) : _resultList(app)),
           ],
         ),
       ),
     );
   }
 
-  Widget _endpointsCard(ColorScheme scheme) => Card(
+  Widget _options(AppState app) {
+    Widget pref(RoutePreference p, String label, String key) => Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: ChoiceChip(
+        key: Key(key),
+        label: Text(label),
+        selected: app.preference == p,
+        onSelected: (_) => app.setRouting(preference: p),
+      ),
+    );
+    return SizedBox(
+      height: 52,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: ActionChip(
+              key: const Key('depart'),
+              avatar: const Icon(Icons.schedule_rounded, size: 18),
+              label: Text(
+                _departAt == null
+                    ? tr('Đi ngay', 'Leave now')
+                    : fmtDateTime(_departAt!),
+              ),
+              onPressed: _pickTime,
+            ),
+          ),
+          pref(
+            RoutePreference.fastest,
+            tr('Nhanh nhất', 'Fastest'),
+            'pref-fast',
+          ),
+          pref(
+            RoutePreference.lessWalking,
+            tr('Ít đi bộ', 'Less walking'),
+            'pref-walk',
+          ),
+          pref(
+            RoutePreference.fewerTransfers,
+            tr('Ít chuyển tuyến', 'Fewer transfers'),
+            'pref-transfers',
+          ),
+          FilterChip(
+            key: const Key('metro-only'),
+            label: Text(tr('Chỉ metro', 'Metro only')),
+            selected: app.metroOnly,
+            onSelected: (v) => app.setRouting(metroOnly: v),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _endpointsCard(AppState app, ColorScheme scheme) => Card(
     color: scheme.surfaceContainerHigh,
     child: Padding(
       padding: const EdgeInsets.fromLTRB(12, 6, 4, 6),
@@ -126,24 +276,27 @@ class _PlannerScreenState extends State<PlannerScreen> {
           Expanded(
             child: Column(
               children: [
-                _field(_from, 'Điểm đi', () => _pick(true), const Key('from')),
+                _field(
+                  app.from,
+                  tr('Điểm đi', 'From'),
+                  () => _pick(true),
+                  const Key('from'),
+                ),
                 Divider(height: 1, color: scheme.outlineVariant),
-                _field(_to, 'Điểm đến', () => _pick(false), const Key('to')),
+                _field(
+                  app.to,
+                  tr('Điểm đến', 'To'),
+                  () => _pick(false),
+                  const Key('to'),
+                ),
               ],
             ),
           ),
           IconButton(
             key: const Key('swap'),
-            tooltip: 'Đổi chiều',
+            tooltip: tr('Đổi chiều', 'Swap'),
             icon: const Icon(Icons.swap_vert_rounded),
-            onPressed: () {
-              setState(() {
-                final t = _from;
-                _from = _to;
-                _to = t;
-              });
-              _search();
-            },
+            onPressed: app.swapEndpoints,
           ),
         ],
       ),
@@ -159,7 +312,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
       alignment: Alignment.centerLeft,
       padding: const EdgeInsets.symmetric(horizontal: 4),
       child: Text(
-        p?.name ?? hint,
+        p == null ? hint : AppState.placeName(p),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: TextStyle(
@@ -173,13 +326,148 @@ class _PlannerScreenState extends State<PlannerScreen> {
     ),
   );
 
-  Widget _idle() {
+  /// Home/work shortcut: tap to go there, long-press to change or remove.
+  Widget _shortcut(
+    String key,
+    IconData icon,
+    String label,
+    Place? place,
+    Future<void> Function(Place?) set,
+  ) {
+    Future<void> assign() async {
+      final p = await _choose(label);
+      if (p != null) await set(p);
+    }
+
+    return Expanded(
+      child: Card(
+        color: Theme.of(context).colorScheme.surfaceContainer,
+        clipBehavior: Clip.antiAlias,
+        child: ListTile(
+          key: Key(key),
+          dense: true,
+          leading: Icon(icon),
+          title: Text(label),
+          subtitle: Text(
+            place?.name ?? tr('Chạm để đặt', 'Tap to set'),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          onTap: place == null ? assign : () => _app.planWith(to: place),
+          onLongPress: place == null
+              ? null
+              : () => showModalBottomSheet<void>(
+                  context: context,
+                  showDragHandle: true,
+                  builder: (context) => SafeArea(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ListTile(
+                          leading: const Icon(Icons.edit_outlined),
+                          title: Text(tr('Đổi địa điểm', 'Change place')),
+                          onTap: () {
+                            Navigator.pop(context);
+                            assign();
+                          },
+                        ),
+                        ListTile(
+                          leading: const Icon(Icons.delete_outline),
+                          title: Text(tr('Xoá', 'Remove')),
+                          onTap: () {
+                            Navigator.pop(context);
+                            set(null);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+        ),
+      ),
+    );
+  }
+
+  Widget _idle(AppState app) {
     final t = Theme.of(context);
-    final data = context.read<AppState>().data!;
+    final data = app.data!;
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
       children: [
-        Text('Thử nhanh', style: t.textTheme.titleMedium),
+        Row(
+          children: [
+            _shortcut(
+              'fav-home',
+              Icons.home_rounded,
+              tr('Nhà', 'Home'),
+              app.home,
+              app.setHome,
+            ),
+            const SizedBox(width: 8),
+            _shortcut(
+              'fav-work',
+              Icons.work_rounded,
+              tr('Cơ quan', 'Work'),
+              app.work,
+              app.setWork,
+            ),
+          ],
+        ),
+        if (app.trips.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Text(
+            tr('Lộ trình đã lưu', 'Saved trips'),
+            style: t.textTheme.titleMedium,
+          ),
+          const SizedBox(height: 8),
+          for (final (a, b) in app.trips)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Card(
+                color: t.colorScheme.surfaceContainer,
+                child: ListTile(
+                  leading: const Icon(Icons.bookmark_rounded),
+                  title: Text(
+                    '${AppState.placeName(a)} → ${AppState.placeName(b)}',
+                  ),
+                  trailing: IconButton(
+                    tooltip: tr('Xoá', 'Remove'),
+                    icon: const Icon(Icons.close),
+                    onPressed: () => app.toggleTrip(a, b),
+                  ),
+                  onTap: () => app.planWith(from: a, to: b),
+                ),
+              ),
+            ),
+        ],
+        if (app.saved.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Text(
+            tr('Địa điểm đã lưu', 'Saved places'),
+            style: t.textTheme.titleMedium,
+          ),
+          const SizedBox(height: 8),
+          for (final p in app.saved)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Card(
+                color: t.colorScheme.surfaceContainer,
+                child: ListTile(
+                  leading: const Icon(Icons.star_rounded),
+                  title: Text(p.name),
+                  subtitle: p.subtitle.isEmpty ? null : Text(p.subtitle),
+                  trailing: IconButton(
+                    tooltip: tr('Xoá', 'Remove'),
+                    icon: const Icon(Icons.close),
+                    onPressed: () => app.toggleSaved(p),
+                  ),
+                  onTap: () => app.planWith(to: p),
+                ),
+              ),
+            ),
+        ],
+        const SizedBox(height: 16),
+        Text(tr('Thử nhanh', 'Quick try'), style: t.textTheme.titleMedium),
         const SizedBox(height: 8),
         for (final (label, a, b) in _samples)
           Padding(
@@ -190,21 +478,20 @@ class _PlannerScreenState extends State<PlannerScreen> {
                 leading: const Icon(Icons.bolt_rounded),
                 title: Text(label),
                 trailing: const Icon(Icons.chevron_right),
-                onTap: () {
-                  setState(() {
-                    _from = a;
-                    _to = b;
-                  });
-                  _search();
-                },
+                onTap: () => app.planWith(from: a, to: b),
               ),
             ),
           ),
         const SizedBox(height: 12),
         Text(
-          'Dữ liệu ngoại tuyến: ${data.routes.length} chiều tuyến, '
-          '${data.stops.length} trạm từ OpenStreetMap (${data.generated}). '
-          'Thời gian và giá vé là ước tính, không phải lịch chạy thực tế.',
+          tr(
+            'Dữ liệu ngoại tuyến: ${data.routes.length} chiều tuyến, '
+                '${data.stops.length} trạm từ OpenStreetMap (${data.generated}). '
+                'Thời gian và giá vé là ước tính, không phải lịch chạy thực tế.',
+            'Offline data: ${data.routes.length} route directions, '
+                '${data.stops.length} stops from OpenStreetMap (${data.generated}). '
+                'Times and fares are estimates, not real timetables.',
+          ),
           style: t.textTheme.bodySmall?.copyWith(
             color: t.colorScheme.onSurfaceVariant,
           ),
@@ -213,30 +500,75 @@ class _PlannerScreenState extends State<PlannerScreen> {
     );
   }
 
-  Widget _resultList() {
+  Widget _resultList(AppState app) {
     final t = Theme.of(context);
     final results = _results!;
-    if (results.isEmpty) {
-      return const Center(
-        child: Text('Không tìm thấy lộ trình phù hợp vào giờ này.'),
-      );
-    }
-    return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-      itemCount: results.length + 2,
-      separatorBuilder: (_, _) => const SizedBox(height: 10),
-      itemBuilder: (context, i) {
-        if (i == 0) {
-          return Text(
-            '${results.length} lộ trình · khởi hành ${fmtClock(_searchedAt)}',
+    final from = app.from!, to = app.to!;
+    final tripSaved = app.isTripSaved(from, to);
+    final header = Row(
+      children: [
+        Expanded(
+          child: Text(
+            tr(
+              '${results.length} lộ trình · khởi hành ${fmtClock(_searchedAt)}',
+              '${results.length} options · leaving ${fmtClock(_searchedAt)}',
+            ),
             style: t.textTheme.labelLarge?.copyWith(
               color: t.colorScheme.onSurfaceVariant,
             ),
-          );
-        }
+          ),
+        ),
+        IconButton(
+          key: const Key('save-trip'),
+          visualDensity: VisualDensity.compact,
+          tooltip: tripSaved
+              ? tr('Bỏ lưu lộ trình', 'Remove saved trip')
+              : tr('Lưu lộ trình', 'Save trip'),
+          icon: Icon(
+            tripSaved ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
+          ),
+          onPressed: () => app.toggleTrip(from, to),
+        ),
+      ],
+    );
+    if (results.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+        child: Column(
+          children: [
+            header,
+            Expanded(
+              child: Center(
+                child: Text(
+                  app.metroOnly
+                      ? tr(
+                          'Không có lộ trình chỉ dùng metro giữa hai điểm này.',
+                          'No metro-only trip between these places.',
+                        )
+                      : tr(
+                          'Không tìm thấy lộ trình phù hợp vào giờ này.',
+                          'No trip found at this time.',
+                        ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+      itemCount: results.length + 2,
+      separatorBuilder: (_, _) => const SizedBox(height: 10),
+      itemBuilder: (context, i) {
+        if (i == 0) return header;
         if (i == results.length + 1) {
           return Text(
-            'Thời gian gồm chờ xe ước tính theo tần suất tuyến. Giá vé chỉ để tham khảo.',
+            tr(
+              'Thời gian gồm chờ xe ước tính theo tần suất tuyến. Giá vé chỉ để tham khảo.',
+              'Times include an estimated wait based on line frequency. Fares are indicative only.',
+            ),
             style: t.textTheme.bodySmall?.copyWith(
               color: t.colorScheme.onSurfaceVariant,
             ),
@@ -252,8 +584,8 @@ class _PlannerScreenState extends State<PlannerScreen> {
             MaterialPageRoute(
               builder: (_) => ItineraryScreen(
                 itinerary: it,
-                from: _from!,
-                to: _to!,
+                from: from,
+                to: to,
                 departAt: _searchedAt,
               ),
             ),
@@ -361,7 +693,7 @@ class ItineraryCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
-                        'Đề xuất',
+                        tr('Đề xuất', 'Best'),
                         style: t.textTheme.labelSmall?.copyWith(
                           color: t.colorScheme.onPrimaryContainer,
                           fontWeight: FontWeight.w700,
@@ -381,12 +713,18 @@ class ItineraryCard extends StatelessWidget {
               Text(
                 [
                   if (it.walkOnly)
-                    'Chỉ đi bộ'
+                    tr('Chỉ đi bộ', 'Walk only')
                   else
                     it.transfers == 0
-                        ? 'Đi thẳng'
-                        : '${it.transfers} lần chuyển tuyến',
-                  'Đi bộ ${fmtDistance(it.walkMetres)}',
+                        ? tr('Đi thẳng', 'Direct')
+                        : tr(
+                            '${it.transfers} lần chuyển tuyến',
+                            '${it.transfers} transfer${it.transfers > 1 ? 's' : ''}',
+                          ),
+                  tr(
+                    'Đi bộ ${fmtDistance(it.walkMetres)}',
+                    'Walk ${fmtDistance(it.walkMetres)}',
+                  ),
                   if (it.fare > 0) '~${fmtMoney(it.fare)}',
                 ].join(' · '),
                 style: t.textTheme.bodySmall?.copyWith(

@@ -4,8 +4,10 @@ import 'package:provider/provider.dart';
 
 import '../app_state.dart';
 import '../data/transit_data.dart';
+import '../l10n.dart';
 import '../routing/router.dart' as routing;
 import 'common.dart';
+import 'stop_detail_screen.dart';
 
 class RouteDetailScreen extends StatefulWidget {
   final TransitRoute route;
@@ -67,7 +69,7 @@ class _RouteDetailScreenState extends State<RouteDetailScreen> {
           if (_directions.length > 1)
             IconButton(
               key: const Key('switch-direction'),
-              tooltip: 'Đổi chiều',
+              tooltip: tr('Đổi chiều', 'Switch direction'),
               icon: const Icon(Icons.swap_horiz_rounded),
               onPressed: _switchDirection,
             ),
@@ -131,16 +133,19 @@ class _RouteDetailScreenState extends State<RouteDetailScreen> {
                 const SizedBox(height: 4),
                 Text(
                   [
-                    '${r.stops.length} trạm',
+                    tr('${r.stops.length} trạm', '${r.stops.length} stops'),
                     fmtDistance(r.dist.last),
                     r.headwayMin != null
-                        ? '$headway phút/chuyến'
-                        : '~$headway phút/chuyến (giả định)',
+                        ? tr('$headway phút/chuyến', 'every $headway min')
+                        : tr(
+                            '~$headway phút/chuyến (giả định)',
+                            '~every $headway min (assumed)',
+                          ),
                     if (r.openingHours.isNotEmpty) r.openingHours,
-                    if (r.charge.isNotEmpty) 'vé ${r.charge}',
+                    if (r.charge.isNotEmpty) '${tr('vé', 'fare')} ${r.charge}',
                     if (r.operator.isNotEmpty) r.operator,
                     if (r.scheduleSource.isNotEmpty)
-                      '${r.scheduleFields.isEmpty ? 'giờ chạy' : r.scheduleFields} theo ${r.scheduleSource}',
+                      '${r.scheduleFields.isEmpty ? 'giờ chạy' : r.scheduleFields} ${tr('theo', 'from')} ${r.scheduleSource}',
                   ].join(' · '),
                   style: t.textTheme.bodySmall?.copyWith(
                     color: t.colorScheme.onSurfaceVariant,
@@ -179,10 +184,26 @@ class _RouteDetailScreenState extends State<RouteDetailScreen> {
                   ),
                   subtitle: others.isEmpty
                       ? null
-                      : Text('Chuyển tuyến: $others'),
-                  trailing: Text(
-                    fmtDistance(r.dist[i]),
-                    style: t.textTheme.bodySmall,
+                      : Text('${tr('Chuyển tuyến', 'Transfer')}: $others'),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        fmtDistance(r.dist[i]),
+                        style: t.textTheme.bodySmall,
+                      ),
+                      IconButton(
+                        key: Key('stop-info-$i'),
+                        tooltip: tr('Chi tiết trạm', 'Stop details'),
+                        visualDensity: VisualDensity.compact,
+                        icon: const Icon(Icons.info_outline, size: 20),
+                        onPressed: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => StopDetailScreen(stop: s),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   onTap: () {
                     setState(() => _selected = i);

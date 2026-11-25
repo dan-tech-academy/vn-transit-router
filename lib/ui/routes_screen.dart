@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../l10n.dart';
 import '../app_state.dart';
 import '../data/geo.dart';
 import '../data/transit_data.dart';
@@ -64,7 +65,7 @@ class _RoutesScreenState extends State<RoutesScreen> {
         )
         .toList();
     return Scaffold(
-      appBar: AppBar(title: const Text('Tra cứu tuyến')),
+      appBar: AppBar(title: Text(tr('Tra cứu tuyến', 'Browse routes'))),
       body: Column(
         children: [
           Padding(
@@ -73,7 +74,10 @@ class _RoutesScreenState extends State<RoutesScreen> {
               key: const Key('route-query'),
               onChanged: (v) => setState(() => _query = v),
               decoration: InputDecoration(
-                hintText: 'Số tuyến hoặc tên (vd: 19, Bến Thành)',
+                hintText: tr(
+                  'Số tuyến hoặc tên (vd: 19, Bến Thành)',
+                  'Line number or name (e.g. 19, Bến Thành)',
+                ),
                 prefixIcon: const Icon(Icons.search),
                 filled: true,
                 isDense: true,
@@ -101,7 +105,11 @@ class _RoutesScreenState extends State<RoutesScreen> {
           const SizedBox(height: 4),
           Expanded(
             child: lines.isEmpty
-                ? const Center(child: Text('Không có tuyến phù hợp.'))
+                ? Center(
+                    child: Text(
+                      tr('Không có tuyến phù hợp.', 'No matching routes.'),
+                    ),
+                  )
                 : ListView.builder(
                     itemCount: lines.length,
                     itemBuilder: (context, i) {
@@ -122,8 +130,8 @@ class _RoutesScreenState extends State<RoutesScreen> {
                           overflow: TextOverflow.ellipsis,
                         ),
                         subtitle: Text(
-                          '${r.modeLabel} · ${r.stops.length} trạm · ${fmtDistance(r.dist.last)}'
-                          '${l.length > 1 ? ' · ${l.length} chiều' : ''}',
+                          '${r.modeLabel} · ${r.stops.length} ${tr('trạm', 'stops')} · ${fmtDistance(r.dist.last)}'
+                          '${l.length > 1 ? ' · ${l.length} ${tr('chiều', 'directions')}' : ''}',
                           style: t.textTheme.bodySmall,
                         ),
                         onTap: () => Navigator.of(context).push(

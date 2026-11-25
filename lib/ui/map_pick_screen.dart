@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:provider/provider.dart';
 
+import '../l10n.dart';
 import '../app_state.dart';
 import '../services/geocoder.dart';
 import 'common.dart';
@@ -26,7 +27,7 @@ class _MapPickScreenState extends State<MapPickScreen> {
       p = await app.geocoder.reverse(g);
     } catch (_) {}
     p ??= Place(
-      'Điểm đã chọn',
+      tr('Điểm đã chọn', 'Picked point'),
       '${g.lat.toStringAsFixed(5)}, ${g.lon.toStringAsFixed(5)}',
       g,
     );
@@ -40,7 +41,7 @@ class _MapPickScreenState extends State<MapPickScreen> {
         app.lastKnown ??
         (app.recent.isNotEmpty ? app.recent.first.geo : AppState.defaultCenter);
     return Scaffold(
-      appBar: AppBar(title: const Text('Chọn trên bản đồ')),
+      appBar: AppBar(title: Text(tr('Chọn trên bản đồ', 'Pick on map'))),
       body: Stack(
         alignment: Alignment.center,
         children: [
@@ -80,7 +81,7 @@ class _MapPickScreenState extends State<MapPickScreen> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.check),
-                label: const Text('Chọn vị trí này'),
+                label: Text(tr('Chọn vị trí này', 'Use this location')),
                 style: FilledButton.styleFrom(
                   minimumSize: const Size.fromHeight(52),
                 ),

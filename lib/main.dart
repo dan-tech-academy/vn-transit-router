@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 
 import 'app_state.dart';
+import 'l10n.dart';
 import 'ui/nearby_screen.dart';
 import 'ui/planner_screen.dart';
 import 'ui/routes_screen.dart';
@@ -31,8 +33,15 @@ class TransitApp extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
     );
+    final app = context.watch<AppState>();
     return MaterialApp(
+      // Rebuild every screen when the language changes.
+      key: ValueKey(app.lang),
       title: 'Lộ Trình Việt',
+      themeMode: app.themeMode,
+      locale: Locale(app.lang),
+      supportedLocales: const [Locale('vi'), Locale('en')],
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
       debugShowCheckedModeBanner: false,
       theme: theme(Brightness.light),
       darkTheme: theme(Brightness.dark),
@@ -49,8 +58,6 @@ class HomeShell extends StatefulWidget {
 }
 
 class _HomeShellState extends State<HomeShell> {
-  int _tab = 0;
-
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
@@ -59,20 +66,22 @@ class _HomeShellState extends State<HomeShell> {
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
-            child: Text('Không tải được dữ liệu tuyến: ${app.loadError}'),
+            child: Text(
+              '${tr('Không tải được dữ liệu tuyến', 'Could not load route data')}: ${app.loadError}',
+            ),
           ),
         ),
       );
     }
     if (!app.ready) {
-      return const Scaffold(
+      return Scaffold(
         body: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text('Đang tải dữ liệu tuyến...'),
+              const CircularProgressIndicator(),
+              const SizedBox(height: 16),
+              Text(tr('Đang tải dữ liệu tuyến...', 'Loading route data...')),
             ],
           ),
         ),
@@ -80,24 +89,24 @@ class _HomeShellState extends State<HomeShell> {
     }
     return Scaffold(
       body: IndexedStack(
-        index: _tab,
+        index: app.tab,
         children: const [PlannerScreen(), RoutesScreen(), NearbyScreen()],
       ),
       bottomNavigationBar: NavigationBar(
-        selectedIndex: _tab,
-        onDestinationSelected: (i) => setState(() => _tab = i),
-        destinations: const [
+        selectedIndex: app.tab,
+        onDestinationSelected: app.setTab,
+        destinations: [
           NavigationDestination(
-            icon: Icon(Icons.alt_route_rounded),
-            label: 'Tìm đường',
+            icon: const Icon(Icons.alt_route_rounded),
+            label: tr('Tìm đường', 'Plan'),
           ),
           NavigationDestination(
-            icon: Icon(Icons.directions_bus_rounded),
-            label: 'Tuyến',
+            icon: const Icon(Icons.directions_bus_rounded),
+            label: tr('Tuyến', 'Routes'),
           ),
           NavigationDestination(
-            icon: Icon(Icons.place_rounded),
-            label: 'Trạm gần đây',
+            icon: const Icon(Icons.place_rounded),
+            label: tr('Trạm gần đây', 'Nearby'),
           ),
         ],
       ),

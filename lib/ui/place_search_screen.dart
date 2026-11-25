@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../l10n.dart';
 import '../app_state.dart';
 import '../data/geo.dart';
 import '../services/geocoder.dart';
@@ -71,7 +72,10 @@ class _PlaceSearchScreenState extends State<PlaceSearchScreen> {
       out.add(
         Place(
           s.name,
-          'Trạm · $city · tuyến ${lines.join(', ')}',
+          tr(
+            'Trạm · $city · tuyến ${lines.join(', ')}',
+            'Stop · $city · lines ${lines.join(', ')}',
+          ),
           s.geo,
           isStop: true,
         ),
@@ -96,7 +100,10 @@ class _PlaceSearchScreenState extends State<PlaceSearchScreen> {
       setState(() {
         _online = [];
         _loading = false;
-        _error = 'Không tìm được địa điểm trực tuyến. Kiểm tra kết nối mạng.';
+        _error = tr(
+          'Không tìm được địa điểm trực tuyến. Kiểm tra kết nối mạng.',
+          'Online place search failed. Check your connection.',
+        );
       });
     }
   }
@@ -169,23 +176,27 @@ class _PlaceSearchScreenState extends State<PlaceSearchScreen> {
           ListTile(
             key: const Key('use-my-location'),
             leading: const Icon(Icons.my_location_rounded),
-            title: const Text(AppState.myLocationName),
+            title: Text(tr('Vị trí của tôi', 'My location')),
             onTap: _useMyLocation,
           ),
           ListTile(
             key: const Key('pick-on-map'),
             leading: const Icon(Icons.map_rounded),
-            title: const Text('Chọn trên bản đồ'),
+            title: Text(tr('Chọn trên bản đồ', 'Pick on map')),
             onTap: _pickOnMap,
           ),
           const Divider(height: 1),
           if (!typing) ...[
-            if (app.recent.isNotEmpty) _header('Gần đây'),
+            if (app.home != null) _tile(app.home!, Icons.home_rounded),
+            if (app.work != null) _tile(app.work!, Icons.work_rounded),
+            if (app.saved.isNotEmpty) _header(tr('Đã lưu', 'Saved')),
+            for (final p in app.saved) _tile(p, Icons.star_rounded),
+            if (app.recent.isNotEmpty) _header(tr('Gần đây', 'Recent')),
             for (final p in app.recent) _tile(p, Icons.history_rounded),
           ] else ...[
-            if (_stops.isNotEmpty) _header('Trạm dừng'),
+            if (_stops.isNotEmpty) _header(tr('Trạm dừng', 'Stops')),
             for (final p in _stops) _tile(p, Icons.directions_bus_rounded),
-            if (_online.isNotEmpty) _header('Địa điểm'),
+            if (_online.isNotEmpty) _header(tr('Địa điểm', 'Places')),
             for (final p in _online) _tile(p, Icons.place_outlined),
             if (_error != null)
               Padding(
@@ -199,8 +210,15 @@ class _PlaceSearchScreenState extends State<PlaceSearchScreen> {
               ListTile(
                 key: const Key('search-online'),
                 leading: const Icon(Icons.travel_explore),
-                title: Text('Tìm địa danh “${_controller.text.trim()}”'),
-                subtitle: const Text('Tra trên OpenStreetMap'),
+                title: Text(
+                  tr(
+                    'Tìm địa danh “${_controller.text.trim()}”',
+                    'Search places for “${_controller.text.trim()}”',
+                  ),
+                ),
+                subtitle: Text(
+                  tr('Tra trên OpenStreetMap', 'Look up on OpenStreetMap'),
+                ),
                 onTap: () => _onSubmitted(_controller.text),
               ),
             if (_searchedOnline &&
@@ -208,9 +226,9 @@ class _PlaceSearchScreenState extends State<PlaceSearchScreen> {
                 _stops.isEmpty &&
                 _online.isEmpty &&
                 _error == null)
-              const Padding(
-                padding: EdgeInsets.all(16),
-                child: Text('Không có kết quả.'),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(tr('Không có kết quả.', 'No results.')),
               ),
           ],
         ],
@@ -233,6 +251,15 @@ class _PlaceSearchScreenState extends State<PlaceSearchScreen> {
     subtitle: p.subtitle.isEmpty
         ? null
         : Text(p.subtitle, maxLines: 1, overflow: TextOverflow.ellipsis),
+    trailing: IconButton(
+      tooltip: tr('Lưu địa điểm', 'Save place'),
+      icon: Icon(
+        context.watch<AppState>().isSaved(p)
+            ? Icons.star_rounded
+            : Icons.star_border_rounded,
+      ),
+      onPressed: () => context.read<AppState>().toggleSaved(p),
+    ),
     onTap: () => _done(p),
   );
 }

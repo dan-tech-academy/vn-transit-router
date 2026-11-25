@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import '../l10n.dart';
 import 'geo.dart';
 
 enum TransitMode { bus, metro, ferry }
@@ -16,7 +17,7 @@ class Stop {
   Stop(this.index, this.lat, this.lon, this.name);
 
   Geo get geo => Geo(lat, lon);
-  String get displayName => name.isEmpty ? 'Trạm dừng' : name;
+  String get displayName => name.isEmpty ? tr('Trạm dừng', 'Stop') : name;
 }
 
 /// One direction of a line, as mapped in OpenStreetMap.
@@ -151,9 +152,9 @@ class TransitRoute {
   }
 
   String get modeLabel => switch (mode) {
-    TransitMode.bus => 'Xe buýt',
+    TransitMode.bus => tr('Xe buýt', 'Bus'),
     TransitMode.metro => 'Metro',
-    TransitMode.ferry => 'Buýt sông',
+    TransitMode.ferry => tr('Buýt sông', 'Waterbus'),
   };
 
   String get title {
