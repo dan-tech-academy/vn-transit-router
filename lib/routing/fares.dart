@@ -3,8 +3,12 @@ import '../data/transit_data.dart';
 /// Rough single-ride fare in VND. Uses the fare mapped on the route when there
 /// is one, otherwise a per-city guess; the UI always labels fares "ước tính".
 int estimateFare(TransitRoute r, int rideMetres) {
-  final mapped = RegExp(r'^(\d{4,6})\s*VND$').firstMatch(r.charge.trim());
-  if (mapped != null) return int.parse(mapped.group(1)!);
+  // First amount of the tag: "7000 VND", or the minimum of "15,000–22,000 VND".
+  final mapped = RegExp(r'^(\d{1,3}(?:[.,]\d{3})+|\d{4,6})')
+      .firstMatch(r.charge.trim());
+  if (mapped != null && r.charge.toUpperCase().contains('VND')) {
+    return int.parse(mapped.group(1)!.replaceAll(RegExp(r'[.,]'), ''));
+  }
   final km = rideMetres / 1000;
   final routeKm = r.dist.last / 1000;
   switch (r.mode) {

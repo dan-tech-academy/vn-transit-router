@@ -47,8 +47,9 @@ class Geocoder {
       'addressdetails': '0',
     };
     if (near != null) {
-      params['viewbox'] =
-          '${near.lon - 0.4},${near.lat + 0.4},${near.lon + 0.4},${near.lat - 0.4}';
+      // Bias results towards the user's area without sending the exact fix.
+      final lat = near.lat.roundToDouble(), lon = near.lon.roundToDouble();
+      params['viewbox'] = '${lon - 1},${lat + 1},${lon + 1},${lat - 1}';
     }
     final res = await _client
         .get(Uri.https(_host, '/search', params), headers: _headers)

@@ -89,7 +89,7 @@ class _NearbyScreenState extends State<NearbyScreen> {
   Widget build(BuildContext context) {
     final t = Theme.of(context);
     final data = context.read<AppState>().data!;
-    final near = data.stopsNear(_center, 600, limit: 40);
+    final near = data.stopsNear(_center, 600);
     return Scaffold(
       appBar: AppBar(title: const Text('Trạm gần đây')),
       floatingActionButton: FloatingActionButton(

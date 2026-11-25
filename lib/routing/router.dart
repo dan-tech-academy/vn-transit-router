@@ -129,24 +129,38 @@ class TransitRouter {
     ];
   }
 
+  /// Longest straight-line distance offered as a walk when no transit fits.
+  static const maxWalkOnlyMetres = 8000.0;
+
   int walkSeconds(double straightMetres) =>
       (straightMetres * config.walkDetour / config.walkSpeed).round();
 
   int waitSeconds(TransitRoute r) =>
       (r.headwayMin ?? RouterConfig.defaultHeadwayMin(r.mode)) * 30;
 
-  /// Returns up to [maxResults] distinct itineraries, best first.
+  Set<int> _closed = const {};
+
+  /// Returns up to [maxResults] distinct itineraries, best first. Routes whose
+  /// mapped service hours exclude [departAt] are not used. Empty when the
+  /// places are too far apart to walk and no transit connects them.
   List<Itinerary> plan(
     Geo origin,
     Geo dest, {
     String originName = 'Điểm đi',
     String destName = 'Điểm đến',
     int maxResults = 5,
+    DateTime? departAt,
   }) {
+    _closed = departAt == null
+        ? const {}
+        : {
+            for (final r in data.routes)
+              if (!r.inServiceAt(departAt)) r.index,
+          };
     final results = <Itinerary>[];
     final seen = <String>{};
     void add(Itinerary? it) {
-      if (it == null || !seen.add(it.signature)) return;
+      if (it == null || it.walkOnly || !seen.add(it.signature)) return;
       results.add(it);
     }
 
@@ -193,12 +207,11 @@ class TransitRouter {
     }
     results.removeWhere((it) => it.seconds > walk.seconds && direct < 5000);
     results.sort((a, b) => _score(a).compareTo(_score(b)));
-    final out = results.take(maxResults).toList();
-    if (direct <= 3000 || out.isEmpty) {
-      out.add(walk);
-      out.sort((a, b) => _score(a).compareTo(_score(b)));
+    if (direct <= 3000 || (results.isEmpty && direct <= maxWalkOnlyMetres)) {
+      results.add(walk);
+      results.sort((a, b) => _score(a).compareTo(_score(b)));
     }
-    return out;
+    return results.take(maxResults).toList();
   }
 
   // Generalised cost: time plus penalties for transfers and long walks.
@@ -254,7 +267,7 @@ class TransitRouter {
       final next = <int>{};
       for (final ri in routesToScan) {
         final r = data.routes[ri];
-        if (banned.contains(r.lineKey)) continue;
+        if (banned.contains(r.lineKey) || _closed.contains(ri)) continue;
         final cum = _cum[ri];
         final wait = waitSeconds(r);
         var bestOffset = _inf;
@@ -282,10 +295,15 @@ class TransitRouter {
         }
       }
       // Foot transfers from stops improved by a ride in this round.
-      for (final s in next.toList()) {
-        if (pRoute[k][s] < 0) continue;
+      // Snapshot ride arrivals first so a walk relaxed earlier in this loop
+      // cannot hide another stop's outgoing transfers.
+      final rideArrivals = [
+        for (final s in next)
+          if (pRoute[k][s] >= 0) (s, cur[s]),
+      ];
+      for (final (s, at) in rideArrivals) {
         for (final (o, sec) in _footpaths[s]) {
-          final arr = cur[s] + sec;
+          final arr = at + sec;
           if (arr < cur[o]) {
             cur[o] = arr;
             pRoute[k][o] = -1;

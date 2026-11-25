@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 
 import '../routing/router.dart';
 import '../services/geocoder.dart';
@@ -24,6 +25,8 @@ class ItineraryScreen extends StatelessWidget {
     final t = Theme.of(context);
     final it = itinerary;
     final allPoints = [for (final l in it.legs) ...l.path.map(ll)];
+    if (allPoints.isEmpty) allPoints.add(const LatLng(10.7725, 106.6980));
+    final samePoint = allPoints.every((p) => p == allPoints.first);
     final polylines = <Polyline>[
       for (final l in it.legs)
         if (l.kind == LegKind.walk)
@@ -63,10 +66,14 @@ class ItineraryScreen extends StatelessWidget {
             height: MediaQuery.of(context).size.height * 0.36,
             child: FlutterMap(
               options: MapOptions(
-                initialCameraFit: CameraFit.bounds(
-                  bounds: LatLngBounds.fromPoints(allPoints),
-                  padding: const EdgeInsets.all(36),
-                ),
+                initialCameraFit: samePoint
+                    ? null
+                    : CameraFit.bounds(
+                        bounds: LatLngBounds.fromPoints(allPoints),
+                        padding: const EdgeInsets.all(36),
+                      ),
+                initialCenter: allPoints.first,
+                initialZoom: 16,
                 interactionOptions: const InteractionOptions(
                   flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
                 ),

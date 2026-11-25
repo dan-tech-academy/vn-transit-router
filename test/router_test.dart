@@ -109,6 +109,43 @@ void main() {
     expect(its.single.walkOnly, isTrue);
   });
 
+  test('same origin and destination gives one walk with a path', () {
+    const p = Geo(10.7725, 106.6980);
+    final its = router.plan(p, p);
+    expect(its, hasLength(1));
+    expect(its.single.walkOnly, isTrue);
+    expect(its.single.legs.single.path, isNotEmpty);
+  });
+
+  test('different cities give no route instead of a long walk', () {
+    final its = router.plan(
+      const Geo(10.7725, 106.6980),
+      const Geo(16.0614, 108.2470),
+    );
+    expect(its, isEmpty);
+  });
+
+  test('never returns more than maxResults', () {
+    final its = router.plan(
+      const Geo(10.7725, 106.6980),
+      const Geo(10.7830, 106.7000),
+    );
+    expect(its.length, lessThanOrEqualTo(5));
+    expect(its.where((i) => i.walkOnly), hasLength(1));
+  });
+
+  test('routes outside their service hours are not used', () {
+    const a = Geo(21.0287, 105.8270), b = Geo(20.9530, 105.7470);
+    final day = router.plan(a, b, departAt: DateTime(2026, 1, 5, 9));
+    final night = router.plan(a, b, departAt: DateTime(2026, 1, 5, 2));
+    expect(day.first.rides, isNotEmpty);
+    for (final it in night) {
+      for (final l in it.rides) {
+        expect(l.route!.inServiceAt(DateTime(2026, 1, 5, 2)), isTrue);
+      }
+    }
+  });
+
   test('routing is fast', () {
     final sw = Stopwatch()..start();
     for (var i = 0; i < 5; i++) {

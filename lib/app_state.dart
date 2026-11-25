@@ -46,7 +46,12 @@ class AppState extends ChangeNotifier {
 
   Future<void> remember(Place p) async {
     if (p.name == myLocationName) return;
-    recent.removeWhere((r) => r.name == p.name && r.subtitle == p.subtitle);
+    recent.removeWhere(
+      (r) =>
+          r.name == p.name &&
+          r.subtitle == p.subtitle &&
+          distanceBetween(r.geo, p.geo) < 50,
+    );
     recent.insert(0, p);
     if (recent.length > 8) recent = recent.sublist(0, 8);
     notifyListeners();

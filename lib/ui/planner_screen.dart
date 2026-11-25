@@ -55,6 +55,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
         _to!.geo,
         originName: _from!.name,
         destName: _to!.name,
+        departAt: _searchedAt,
       );
     });
   }
@@ -216,7 +217,9 @@ class _PlannerScreenState extends State<PlannerScreen> {
     final t = Theme.of(context);
     final results = _results!;
     if (results.isEmpty) {
-      return const Center(child: Text('Không tìm thấy lộ trình phù hợp.'));
+      return const Center(
+        child: Text('Không tìm thấy lộ trình phù hợp vào giờ này.'),
+      );
     }
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),

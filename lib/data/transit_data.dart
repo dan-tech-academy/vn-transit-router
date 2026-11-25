@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -74,7 +75,23 @@ class TransitRoute {
   List<Geo> shapeBetween(int fromPos, int toPos) =>
       shape.sublist(shapeIdx[fromPos], shapeIdx[toPos] + 1);
 
-  String get lineKey => '$city|${mode.name}|$ref|$network';
+  /// Directions of one line share a key. Network is left out: OSM often tags
+  /// it on only one direction.
+  String get lineKey => '$city|${mode.name}|${ref.isEmpty ? name : ref}';
+
+  /// False only when mapped hours (first HH:MM-HH:MM range) exclude [t].
+  bool inServiceAt(DateTime t) {
+    final m = RegExp(r'(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})')
+        .firstMatch(openingHours);
+    if (m == null) return true;
+    final open = int.parse(m[1]!) * 60 + int.parse(m[2]!);
+    final close = int.parse(m[3]!) * 60 + int.parse(m[4]!);
+    final now = t.hour * 60 + t.minute;
+    if (open == close) return true;
+    return open < close
+        ? now >= open && now <= close
+        : now >= open || now <= close;
+  }
 
   String get label {
     if (ref.isNotEmpty) return ref;
@@ -183,7 +200,7 @@ class _Grid {
   List<(Stop, double)> near(Geo p, double radius) {
     final out = <(Stop, double)>[];
     final dLat = radius / 111320;
-    final dLon = radius / 108000; // Vietnam spans lat 8..23
+    final dLon = radius / (111320 * cos(p.lat * pi / 180));
     for (var a = _c(p.lat - dLat); a <= _c(p.lat + dLat); a++) {
       for (var b = _c(p.lon - dLon); b <= _c(p.lon + dLon); b++) {
         for (final i in cells[_key(a, b)] ?? const <int>[]) {

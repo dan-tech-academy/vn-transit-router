@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -18,7 +16,7 @@ class PlaceSearchScreen extends StatefulWidget {
 
 class _PlaceSearchScreenState extends State<PlaceSearchScreen> {
   final _controller = TextEditingController();
-  Timer? _debounce;
+  bool _searchedOnline = false;
   List<Place> _stops = [];
   List<Place> _online = [];
   bool _loading = false;
@@ -27,30 +25,32 @@ class _PlaceSearchScreenState extends State<PlaceSearchScreen> {
 
   @override
   void dispose() {
-    _debounce?.cancel();
     _controller.dispose();
     super.dispose();
   }
 
   void _onChanged(String text) {
     final q = text.trim();
-    _debounce?.cancel();
+    _seq++;
     setState(() {
       _stops = q.length < 2 ? [] : _matchStops(q);
+      _online = [];
+      _searchedOnline = false;
+      _loading = false;
       _error = null;
     });
-    if (q.length < 3) {
-      setState(() {
-        _online = [];
-        _loading = false;
-      });
-      return;
-    }
-    setState(() => _loading = true);
-    _debounce = Timer(
-      const Duration(milliseconds: 600),
-      () => _searchOnline(q),
-    );
+  }
+
+  // Nominatim's usage policy forbids search-as-you-type, so the online
+  // lookup only runs when the user submits the query.
+  void _onSubmitted(String text) {
+    final q = text.trim();
+    if (q.length < 3) return;
+    setState(() {
+      _loading = true;
+      _searchedOnline = true;
+    });
+    _searchOnline(q);
   }
 
   List<Place> _matchStops(String q) {
@@ -63,7 +63,9 @@ class _PlaceSearchScreenState extends State<PlaceSearchScreen> {
       if (s.name.isEmpty || s.routes.isEmpty) continue;
       if (!foldVi(s.name).contains(needle)) continue;
       final city = data.routes[s.routes.first].city;
-      if (!seen.add('${s.name}|$city')) continue;
+      // Collapse the two sides of one street, keep same-name stops elsewhere.
+      final area = '${(s.lat * 50).round()},${(s.lon * 50).round()}';
+      if (!seen.add('${s.name}|$city|$area')) continue;
       final lines = {for (final r in s.routes) data.routes[r].label}.take(5);
       out.add(
         Place(
@@ -138,6 +140,7 @@ class _PlaceSearchScreenState extends State<PlaceSearchScreen> {
           autofocus: true,
           textInputAction: TextInputAction.search,
           onChanged: _onChanged,
+          onSubmitted: _onSubmitted,
           decoration: InputDecoration(
             hintText: widget.title,
             border: InputBorder.none,
@@ -191,7 +194,16 @@ class _PlaceSearchScreenState extends State<PlaceSearchScreen> {
                   style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
               ),
-            if (!_loading &&
+            if (!_searchedOnline && _controller.text.trim().length >= 3)
+              ListTile(
+                key: const Key('search-online'),
+                leading: const Icon(Icons.travel_explore),
+                title: Text('Tìm địa danh “${_controller.text.trim()}”'),
+                subtitle: const Text('Tra trên OpenStreetMap'),
+                onTap: () => _onSubmitted(_controller.text),
+              ),
+            if (_searchedOnline &&
+                !_loading &&
                 _stops.isEmpty &&
                 _online.isEmpty &&
                 _error == null)
