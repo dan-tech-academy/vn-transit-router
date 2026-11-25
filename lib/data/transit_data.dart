@@ -76,21 +76,53 @@ class TransitRoute {
       shape.sublist(shapeIdx[fromPos], shapeIdx[toPos] + 1);
 
   /// Directions of one line share a key. Network is left out: OSM often tags
-  /// it on only one direction.
-  String get lineKey => '$city|${mode.name}|${ref.isEmpty ? name : ref}';
+  /// it on only one direction. Unnumbered lines pair up by their endpoints.
+  String get lineKey {
+    var id = ref;
+    if (id.isEmpty) {
+      final ends = [from, to]..sort();
+      id = from.isEmpty || to.isEmpty ? name : ends.join('~');
+    }
+    return '$city|${mode.name}|$id';
+  }
 
-  /// False only when mapped hours (first HH:MM-HH:MM range) exclude [t].
+  static const _days = ['mo', 'tu', 'we', 'th', 'fr', 'sa', 'su'];
+  static final _dayRe = RegExp(
+    r'\b(mo|tu|we|th|fr|sa|su)\b(?:\s*-\s*(mo|tu|we|th|fr|sa|su)\b)?',
+  );
+  static final _rangeRe = RegExp(r'(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})');
+
+  /// Whether the mapped `opening_hours` cover [t], read in Vietnam time
+  /// (UTC+7). Hours that are missing or not plain day/time ranges count as
+  /// in service. A range past midnight belongs to the day it starts on.
   bool inServiceAt(DateTime t) {
-    final m = RegExp(r'(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})')
-        .firstMatch(openingHours);
-    if (m == null) return true;
-    final open = int.parse(m[1]!) * 60 + int.parse(m[2]!);
-    final close = int.parse(m[3]!) * 60 + int.parse(m[4]!);
-    final now = t.hour * 60 + t.minute;
-    if (open == close) return true;
-    return open < close
-        ? now >= open && now <= close
-        : now >= open || now <= close;
+    if (openingHours.trim().isEmpty) return true;
+    final vn = t.toUtc().add(const Duration(hours: 7));
+    final today = vn.weekday - 1, yesterday = (today + 6) % 7;
+    final now = vn.hour * 60 + vn.minute;
+    for (final rule in openingHours.toLowerCase().split(';')) {
+      final ranges = _rangeRe.allMatches(rule).toList();
+      if (ranges.isEmpty) return true;
+      final dayMatches = _dayRe.allMatches(rule).toList();
+      final days = <int>{};
+      for (final m in dayMatches) {
+        final a = _days.indexOf(m[1]!);
+        final b = m[2] == null ? a : _days.indexOf(m[2]!);
+        for (var d = a; ; d = (d + 1) % 7) {
+          days.add(d);
+          if (d == b) break;
+        }
+      }
+      if (dayMatches.isEmpty) days.addAll([0, 1, 2, 3, 4, 5, 6]);
+      for (final m in ranges) {
+        final open = int.parse(m[1]!) * 60 + int.parse(m[2]!);
+        var close = int.parse(m[3]!) * 60 + int.parse(m[4]!);
+        if (close <= open) close += 1440;
+        if (days.contains(today) && now >= open && now <= close) return true;
+        if (days.contains(yesterday) && now + 1440 <= close) return true;
+      }
+    }
+    return false;
   }
 
   String get label {

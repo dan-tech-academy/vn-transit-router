@@ -57,15 +57,16 @@ class _PlaceSearchScreenState extends State<PlaceSearchScreen> {
     final app = context.read<AppState>();
     final data = app.data!;
     final needle = foldVi(q);
-    final seen = <String>{};
+    final seen = <String, List<Geo>>{};
     final out = <Place>[];
     for (final s in data.stops) {
       if (s.name.isEmpty || s.routes.isEmpty) continue;
       if (!foldVi(s.name).contains(needle)) continue;
       final city = data.routes[s.routes.first].city;
-      // Collapse the two sides of one street, keep same-name stops elsewhere.
-      final area = '${(s.lat * 50).round()},${(s.lon * 50).round()}';
-      if (!seen.add('${s.name}|$city|$area')) continue;
+      // Collapse platforms of one stop, keep same-name stops elsewhere.
+      final same = seen[s.name] ??= [];
+      if (same.any((g) => distanceBetween(g, s.geo) < 1500)) continue;
+      same.add(s.geo);
       final lines = {for (final r in s.routes) data.routes[r].label}.take(5);
       out.add(
         Place(

@@ -175,6 +175,7 @@ class _NearbyScreenState extends State<NearbyScreen> {
                     ),
                   )
                 : ListView.builder(
+                    padding: const EdgeInsets.only(bottom: 88),
                     itemCount: near.length,
                     itemBuilder: (context, i) {
                       final (s, d) = near[i];

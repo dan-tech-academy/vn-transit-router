@@ -155,7 +155,12 @@ class TransitRouter {
         ? const {}
         : {
             for (final r in data.routes)
-              if (!r.inServiceAt(departAt)) r.index,
+              // Boarding happens after the average wait.
+              if (!r.inServiceAt(departAt) ||
+                  !r.inServiceAt(
+                    departAt.add(Duration(seconds: waitSeconds(r))),
+                  ))
+                r.index,
           };
     final results = <Itinerary>[];
     final seen = <String>{};
@@ -297,16 +302,14 @@ class TransitRouter {
       // Foot transfers from stops improved by a ride in this round.
       // Snapshot ride arrivals first so a walk relaxed earlier in this loop
       // cannot hide another stop's outgoing transfers.
-      final rideArrivals = [
-        for (final s in next)
-          if (pRoute[k][s] >= 0) (s, cur[s]),
-      ];
+      // The ride parent of a stop is kept when a walk later improves it, so
+      // a transfer is rebuilt from the same arrival it was scored with.
+      final rideArrivals = [for (final s in next) (s, cur[s])];
       for (final (s, at) in rideArrivals) {
         for (final (o, sec) in _footpaths[s]) {
           final arr = at + sec;
           if (arr < cur[o]) {
             cur[o] = arr;
-            pRoute[k][o] = -1;
             pWalkFrom[k][o] = s;
             next.add(o);
           }
@@ -364,15 +367,15 @@ class TransitRouter {
     var s = endStop;
     var round = k;
     var guard = 0;
+    var afterWalk = false;
     while (round > 0 && guard++ < 64) {
       // Step down to the round where this arrival was actually produced.
-      while (round > 0 && tau[round][s] == tau[round - 1][s]) {
+      while (!afterWalk && round > 0 && tau[round][s] == tau[round - 1][s]) {
         round--;
       }
       if (round == 0) break;
       final walkFrom = pWalkFrom[round][s];
-      if (pRoute[round][s] < 0) {
-        if (walkFrom < 0) return null;
+      if (!afterWalk && walkFrom >= 0) {
         final a = data.stops[walkFrom], b = data.stops[s];
         final d = distanceBetween(a.geo, b.geo);
         legs.add(
@@ -385,8 +388,11 @@ class TransitRouter {
           ),
         );
         s = walkFrom;
+        afterWalk = true;
         continue;
       }
+      afterWalk = false;
+      if (pRoute[round][s] < 0) return null;
       final r = data.routes[pRoute[round][s]];
       final bp = pBoard[round][s], ap = pAlight[round][s];
       final cum = _cum[r.index];

@@ -136,14 +136,51 @@ void main() {
 
   test('routes outside their service hours are not used', () {
     const a = Geo(21.0287, 105.8270), b = Geo(20.9530, 105.7470);
-    final day = router.plan(a, b, departAt: DateTime(2026, 1, 5, 9));
-    final night = router.plan(a, b, departAt: DateTime(2026, 1, 5, 2));
+    final day = router.plan(a, b, departAt: DateTime.utc(2026, 1, 5, 2));
+    final night = router.plan(a, b, departAt: DateTime.utc(2026, 1, 4, 19));
     expect(day.first.rides, isNotEmpty);
     for (final it in night) {
       for (final l in it.rides) {
-        expect(l.route!.inServiceAt(DateTime(2026, 1, 5, 2)), isTrue);
+        expect(l.route!.inServiceAt(DateTime.utc(2026, 1, 4, 19)), isTrue);
       }
     }
+  });
+
+  test('opening hours respect weekdays, midnight and Vietnam time', () {
+    TransitRoute withHours(String oh) => TransitRoute(
+      index: 0,
+      osmId: 0,
+      ref: '',
+      name: '',
+      from: '',
+      to: '',
+      mode: TransitMode.bus,
+      network: '',
+      operator: '',
+      city: '',
+      colour: '',
+      headwayMin: null,
+      openingHours: oh,
+      charge: '',
+      scheduleSource: '',
+      stops: const [],
+      dist: const [],
+      shapeIdx: const [],
+      encodedShape: '',
+    );
+    // Vietnam local time given as UTC; 2026-01-05 is a Monday.
+    DateTime vn(int day, int h, [int m = 0]) =>
+        DateTime.utc(2026, 1, day, h, m).subtract(const Duration(hours: 7));
+    final weekend = withHours('Fr 19:00-21:00; Sa-Su 05:00-21:00');
+    expect(weekend.inServiceAt(vn(5, 20)), isFalse);
+    expect(weekend.inServiceAt(vn(9, 20)), isTrue);
+    expect(weekend.inServiceAt(vn(10, 12)), isTrue);
+    final late = withHours('Mo-Su 05:00-01:00');
+    expect(late.inServiceAt(vn(6, 0, 30)), isTrue);
+    expect(late.inServiceAt(vn(6, 2)), isFalse);
+    expect(withHours('Mo-SU 05:00-21:00').inServiceAt(vn(11, 12)), isTrue);
+    expect(withHours('Mo-Fr 07:10').inServiceAt(vn(5, 3)), isTrue);
+    expect(withHours('').inServiceAt(vn(5, 3)), isTrue);
   });
 
   test('routing is fast', () {

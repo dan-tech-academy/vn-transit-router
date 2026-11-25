@@ -104,6 +104,21 @@
    10
   ]
  },
+ "93": {
+  "name": "Bến Thành - Đại học Nông Lâm",
+  "url": "https://xe-buyt.com/ben-thanh-dai-hoc-nong-lam.html",
+  "first": "05:15",
+  "last": "18:45",
+  "trips": 100,
+  "tripMin": [
+   60,
+   70
+  ],
+  "hw": [
+   12,
+   18
+  ]
+ },
  "52": {
   "name": "Bến Thành - Đại học Quốc tế",
   "url": "https://xe-buyt.com/ben-thanh-dai-hoc-quoc-te.html",
@@ -119,6 +134,21 @@
    150
   ]
  },
+ "86": {
+  "name": "Bến Thành - Đại học Tôn Đức Thắng",
+  "url": "https://xe-buyt.com/ben-thanh-dai-hoc-ton-duc-thang.html",
+  "first": "05:40",
+  "last": "18:40",
+  "trips": 140,
+  "tripMin": [
+   28,
+   30
+  ],
+  "hw": [
+   6,
+   12
+  ]
+ },
  "11": {
   "name": "Bến Thành- Đầm Sen",
   "url": "https://xe-buyt.com/ben-thanh-dam-sen.html",
@@ -132,6 +162,51 @@
   "hw": [
    10,
    15
+  ]
+ },
+ "102": {
+  "name": "Bến Thành - Nguyễn Văn Linh - Bến xe Miền Tây",
+  "url": "https://xe-buyt.com/ben-thanh-nguyen-van-linh-ben-xe-mien-tay.html",
+  "first": "04:45",
+  "last": "19:00",
+  "trips": 140,
+  "tripMin": [
+   60,
+   80
+  ],
+  "hw": [
+   10,
+   15
+  ]
+ },
+ "94": {
+  "name": "Bến xe Chợ Lớn - Bến xe Củ Chi",
+  "url": "https://xe-buyt.com/ben-xe-cho-lon-ben-xe-cu-chi.html",
+  "first": "04:00",
+  "last": "20:30",
+  "trips": 207,
+  "tripMin": [
+   60,
+   75
+  ],
+  "hw": [
+   8,
+   15
+  ]
+ },
+ "103": {
+  "name": "Bến xe Chợ Lớn - Bến xe Ngã 4 Ga",
+  "url": "https://xe-buyt.com/ben-xe-cho-lon-ben-xe-nga-4-ga.html",
+  "first": "05:30",
+  "last": "18:30",
+  "trips": 100,
+  "tripMin": [
+   60,
+   75
+  ],
+  "hw": [
+   12,
+   20
   ]
  },
  "16": {
@@ -179,6 +254,21 @@
    22
   ]
  },
+ "84": {
+  "name": "Bến xe Chợ Lớn - Tân Túc",
+  "url": "https://xe-buyt.com/ben-xe-cho-lon-tan-tuc.html",
+  "first": "04:40",
+  "last": "19:45",
+  "trips": 123,
+  "tripMin": [
+   45,
+   45
+  ],
+  "hw": [
+   12,
+   15
+  ]
+ },
  "62-10": {
   "name": "Bến xe Chợ Lớn - Thanh Vĩnh Đông",
   "url": "https://xe-buyt.com/ben-xe-cho-lon-thanh-vinh-dong.html",
@@ -192,6 +282,36 @@
   "hw": [
    0,
    0
+  ]
+ },
+ "107": {
+  "name": "Bến xe Củ Chi - Bố Heo",
+  "url": "https://xe-buyt.com/ben-xe-cu-chi-bo-heo.html",
+  "first": "05:00",
+  "last": "19:00",
+  "trips": 64,
+  "tripMin": [
+   30,
+   30
+  ],
+  "hw": [
+   20,
+   30
+  ]
+ },
+ "79": {
+  "name": "Bến xe Củ Chi - Đền Bến Dược",
+  "url": "https://xe-buyt.com/ben-xe-cu-chi-den-ben-duoc.html",
+  "first": "05:30",
+  "last": "17:30",
+  "trips": 70,
+  "tripMin": [
+   45,
+   45
+  ],
+  "hw": [
+   20,
+   25
   ]
  },
  "54": {
@@ -359,6 +479,21 @@
    15
   ]
  },
+ "73": {
+  "name": "Chợ Bình Chánh - KCN Lê Minh Xuân",
+  "url": "https://xe-buyt.com/cho-binh-chanh-kcn-le-minh-xuan.html",
+  "first": "04:55",
+  "last": "18:25",
+  "trips": 120,
+  "tripMin": [
+   60,
+   65
+  ],
+  "hw": [
+   11,
+   16
+  ]
+ },
  "42": {
   "name": "Chợ Cầu Muối-Chợ nông sản Thủ Đức",
   "url": "https://xe-buyt.com/cho-cau-muoi-cho-nong-san-thu-duc.html",
@@ -419,6 +554,21 @@
    20
   ]
  },
+ "72": {
+  "name": "Công viên 23/9 - Hiệp Phước",
+  "url": "https://xe-buyt.com/cong-vien-23-9-hiep-phuoc.html",
+  "first": "04:40",
+  "last": "18:40",
+  "trips": 130,
+  "tripMin": [
+   45,
+   55
+  ],
+  "hw": [
+   10,
+   19
+  ]
+ },
  "69": {
   "name": "Công viên 23/9 - KCN Tân Bình",
   "url": "https://xe-buyt.com/cong-vien-23-9-kcn-tan-binh.html",
@@ -477,6 +627,51 @@
   "hw": [
    7,
    10
+  ]
+ },
+ "110": {
+  "name": "Phú Xuân - Hiệp Phước",
+  "url": "https://xe-buyt.com/phu-xuan-hiep-phuoc.html",
+  "first": "05:00",
+  "last": "19:00",
+  "trips": 130,
+  "tripMin": [
+   45,
+   45
+  ],
+  "hw": [
+   12,
+   15
+  ]
+ },
+ "119": {
+  "name": "Sân bay Tân Sơn Nhất - Bến xe Miền Tây",
+  "url": "https://xe-buyt.com/san-bay-tan-son-nhat-ben-xe-mien-tay.html",
+  "first": "04:00",
+  "last": "21:00",
+  "trips": 76,
+  "tripMin": [
+   60,
+   65
+  ],
+  "hw": [
+   25,
+   30
+  ]
+ },
+ "78": {
+  "name": "Thới An - Hóc Môn",
+  "url": "https://xe-buyt.com/thoi-an-hoc-mon.html",
+  "first": "05:30",
+  "last": "19:00",
+  "trips": 120,
+  "tripMin": [
+   40,
+   40
+  ],
+  "hw": [
+   10,
+   15
   ]
  }
 }
