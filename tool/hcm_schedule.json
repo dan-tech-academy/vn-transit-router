@@ -1,0 +1,317 @@
+{
+ "29": {
+  "name": "Bến Phà Cát Lái - Chợ Nông Sản Thủ Đức",
+  "url": "https://xe-buyt.com/ben-pha-cat-lai-cho-nong-san-thu-duc.html",
+  "first": "05:00",
+  "last": "19:00",
+  "trips": 180,
+  "tripMin": [
+   60,
+   60
+  ],
+  "hw": [
+   10,
+   12
+  ]
+ },
+ "15": {
+  "name": "Bến Phú Định- Đầm Sen",
+  "url": "https://xe-buyt.com/ben-phu-dinh-dam-sen.html",
+  "first": "05:30",
+  "last": "18:30",
+  "trips": 120,
+  "tripMin": [
+   55,
+   55
+  ],
+  "hw": [
+   12,
+   15
+  ]
+ },
+ "27": {
+  "name": "Bến Thành - Âu Cơ - An Sương",
+  "url": "https://xe-buyt.com/ben-thanh-au-co-an-suong.html",
+  "first": "05:00",
+  "last": "19:45",
+  "trips": 180,
+  "tripMin": [
+   60,
+   60
+  ],
+  "hw": [
+   8,
+   15
+  ]
+ },
+ "1": {
+  "name": "Bến Thành- BX Chợ Lớn",
+  "url": "https://xe-buyt.com/ben-thanh-ben-xe-cho-lon.html",
+  "first": "05:00",
+  "last": "20:30",
+  "trips": 240,
+  "tripMin": [
+   30,
+   35
+  ],
+  "hw": [
+   6,
+   10
+  ]
+ },
+ "28": {
+  "name": "Bến Thành - Chợ Xuân Thới Thượng",
+  "url": "https://xe-buyt.com/ben-thanh-cho-xuan-thoi-thuong.html",
+  "first": "05:00",
+  "last": "18:30",
+  "trips": 110,
+  "tripMin": [
+   60,
+   90
+  ],
+  "hw": [
+   8,
+   25
+  ]
+ },
+ "4": {
+  "name": "Bến Thành- Cộng Hòa- An Sương",
+  "url": "https://xe-buyt.com/ben-thanh-cong-hoa-an-suong.html",
+  "first": "05:00",
+  "last": "20:30",
+  "trips": 303,
+  "tripMin": [
+   50,
+   65
+  ],
+  "hw": [
+   5,
+   10
+  ]
+ },
+ "11": {
+  "name": "Bến Thành- Đầm Sen",
+  "url": "https://xe-buyt.com/ben-thanh-dam-sen.html",
+  "first": "05:30",
+  "last": "18:45",
+  "trips": 140,
+  "tripMin": [
+   35,
+   40
+  ],
+  "hw": [
+   10,
+   15
+  ]
+ },
+ "16": {
+  "name": "Bến xe Chợ Lớn - Bến xe Tân Phú",
+  "url": "https://xe-buyt.com/ben-xe-cho-lon-ben-xe-tan-phu.html",
+  "first": "05:30",
+  "last": "19:00",
+  "trips": 130,
+  "tripMin": [
+   55,
+   55
+  ],
+  "hw": [
+   12,
+   15
+  ]
+ },
+ "6": {
+  "name": "Bến xe Chợ Lớn- Đại học Nông Lâm",
+  "url": "https://xe-buyt.com/ben-xe-cho-lon-dai-hoc-nong-lam.html",
+  "first": "04:55",
+  "last": "21:00",
+  "trips": 190,
+  "tripMin": [
+   60,
+   70
+  ],
+  "hw": [
+   7,
+   20
+  ]
+ },
+ "24": {
+  "name": "Bến Xe Miền Đông - Hóc Môn",
+  "url": "https://xe-buyt.com/ben-xe-mien-dong-hoc-mon.html",
+  "first": "04:00",
+  "last": "20:30",
+  "trips": 370,
+  "tripMin": [
+   60,
+   75
+  ],
+  "hw": [
+   4,
+   12
+  ]
+ },
+ "43": {
+  "name": "Bến xe Miền Đông- Phà Cát Lái",
+  "url": "https://xe-buyt.com/ben-xe-mien-dong-pha-cat-lai.html",
+  "first": "05:10",
+  "last": "19:00",
+  "trips": 160,
+  "tripMin": [
+   50,
+   50
+  ],
+  "hw": [
+   8,
+   15
+  ]
+ },
+ "32": {
+  "name": "Bến Xe Miền Tây - Bến Xe Ngã Tư Ga",
+  "url": "https://xe-buyt.com/ben-xe-mien-tay-ben-xe-nga-tu-ga.html",
+  "first": "04:30",
+  "last": "19:00",
+  "trips": 244,
+  "tripMin": [
+   60,
+   75
+  ],
+  "hw": [
+   7,
+   8
+  ]
+ },
+ "45": {
+  "name": "Bến xe Quận 8- Bến Thành- Bến xe Miền Đông",
+  "url": "https://xe-buyt.com/ben-xe-quan-8-ben-thanh-ben-xe-mien-dong.html",
+  "first": "05:15",
+  "last": "18:45",
+  "trips": 110,
+  "tripMin": [
+   60,
+   70
+  ],
+  "hw": [
+   13,
+   20
+  ]
+ },
+ "8": {
+  "name": "Bến xe Quận 8- Đại học Quốc Gia",
+  "url": "https://xe-buyt.com/ben-xe-quan-8-dai-hoc-quoc-gia.html",
+  "first": "04:40",
+  "last": "20:30",
+  "trips": 360,
+  "tripMin": [
+   60,
+   80
+  ],
+  "hw": [
+   2,
+   15
+  ]
+ },
+ "25": {
+  "name": "Bến Xe Quận 8 - Khu Dân Cư Vĩnh Lộc A",
+  "url": "https://xe-buyt.com/ben-xe-quan-8-khu-dan-cu-vinh-loc-a.html",
+  "first": "05:00",
+  "last": "18:48",
+  "trips": 140,
+  "tripMin": [
+   60,
+   60
+  ],
+  "hw": [
+   10,
+   14
+  ]
+ },
+ "44": {
+  "name": "Cảng Quận 4- Bình Quới",
+  "url": "https://xe-buyt.com/cang-quan-4-binh-quoi.html",
+  "first": "05:15",
+  "last": "19:30",
+  "trips": 170,
+  "tripMin": [
+   60,
+   60
+  ],
+  "hw": [
+   8,
+   15
+  ]
+ },
+ "42": {
+  "name": "Chợ Cầu Muối-Chợ nông sản Thủ Đức",
+  "url": "https://xe-buyt.com/cho-cau-muoi-cho-nong-san-thu-duc.html",
+  "first": "04:00",
+  "last": "22:20",
+  "trips": 39,
+  "tripMin": [
+   50,
+   50
+  ],
+  "hw": [
+   25,
+   480
+  ]
+ },
+ "9": {
+  "name": "Chợ Lớn - Bình Chánh - Hưng Long",
+  "url": "https://xe-buyt.com/cho-lon-binh-chanh-hung-long.html",
+  "first": "04:00",
+  "last": "19:10",
+  "trips": 228,
+  "tripMin": [
+   60,
+   70
+  ],
+  "hw": [
+   7,
+   9
+  ]
+ },
+ "30": {
+  "name": "Chợ Tân Hương - Đại học Quốc tế",
+  "url": "https://xe-buyt.com/cho-tan-huong-dai-hoc-quoc-te.html",
+  "first": "05:00",
+  "last": "18:45",
+  "trips": 120,
+  "tripMin": [
+   60,
+   95
+  ],
+  "hw": [
+   8,
+   20
+  ]
+ },
+ "31": {
+  "name": "Khu dân cư Tân Quy - Bến Thành - Khu dân cư Bình Lợi",
+  "url": "https://xe-buyt.com/khu-dan-cu-tan-quy-ben-thanh-khu-dan-cu-binh-loi.html",
+  "first": "05:00",
+  "last": "19:00",
+  "trips": 126,
+  "tripMin": [
+   60,
+   75
+  ],
+  "hw": [
+   10,
+   17
+  ]
+ },
+ "14": {
+  "name": "Miền Đông- 3 tháng 2- Miền Tây",
+  "url": "https://xe-buyt.com/mien-dong-3-thang-2-mien-tay.html",
+  "first": "04:00",
+  "last": "20:30",
+  "trips": 244,
+  "tripMin": [
+   60,
+   60
+  ],
+  "hw": [
+   7,
+   10
+  ]
+ }
+}
