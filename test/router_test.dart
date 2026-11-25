@@ -184,6 +184,11 @@ void main() {
     expect(mixed.inServiceAt(vn(10, 6, 0)), isTrue);
     expect(mixed.inServiceAt(vn(10, 9)), isFalse);
     expect(withHours('Mo-Fr 07:00,17:15').inServiceAt(vn(5, 17)), isTrue);
+    final lone = withHours('Mo-Fr 07:10');
+    const wait = Duration(minutes: 8);
+    expect(lone.inServiceAt(vn(5, 7, 5), wait: wait), isTrue);
+    expect(lone.inServiceAt(vn(5, 7, 15), wait: wait), isFalse);
+    expect(late.inServiceAt(vn(6, 0, 58), wait: wait), isFalse);
     expect(withHours('unknown').inServiceAt(vn(5, 3)), isTrue);
     expect(withHours('').inServiceAt(vn(5, 3)), isTrue);
   });

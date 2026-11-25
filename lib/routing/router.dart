@@ -156,10 +156,10 @@ class TransitRouter {
         : {
             for (final r in data.routes)
               // Boarding happens after the average wait.
-              if (!r.inServiceAt(departAt) ||
-                  !r.inServiceAt(
-                    departAt.add(Duration(seconds: waitSeconds(r))),
-                  ))
+              if (!r.inServiceAt(
+                departAt,
+                wait: Duration(seconds: waitSeconds(r)),
+              ))
                 r.index,
           };
     final results = <Itinerary>[];

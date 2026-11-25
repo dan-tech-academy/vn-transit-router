@@ -36,13 +36,13 @@ for r in d['routes']:
     s = sched.get(r['ref'].lstrip('0') or '0')
     if not s or r['city'] != 'TP. Hồ Chí Minh' or r['mode'] != 'bus' or not same_line(s['name'], r):
         continue
-    hit = False
-    if not r.get('hw') and s.get('hw'):
-        r['hw'] = round(sum(s['hw']) / 2); hit = True
+    filled = []
     if not r.get('oh') and s.get('first'):
-        r['oh'] = f"Mo-Su {s['first']}-{s['last']}"; hit = True
-    if hit:
-        r['sched'] = 'xe-buyt.com'; n += 1
+        r['oh'] = f"Mo-Su {s['first']}-{s['last']}"; filled.append('giờ chạy')
+    if not r.get('hw') and s.get('hw'):
+        r['hw'] = round(sum(s['hw']) / 2); filled.append('giãn cách')
+    if filled:
+        r['sched'] = 'xe-buyt.com'; r['schedf'] = ', '.join(filled); n += 1
 d['source'] = d['source'].split('; ')[0] + '; xe-buyt.com (giờ chạy, giãn cách tuyến TP.HCM)'
 with gzip.open(path, 'wt', encoding='utf-8') as f:
     json.dump(d, f, ensure_ascii=False, separators=(',', ':'))

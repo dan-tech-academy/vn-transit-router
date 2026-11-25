@@ -140,7 +140,7 @@ class _RouteDetailScreenState extends State<RouteDetailScreen> {
                     if (r.charge.isNotEmpty) 'vé ${r.charge}',
                     if (r.operator.isNotEmpty) r.operator,
                     if (r.scheduleSource.isNotEmpty)
-                      'giờ chạy theo ${r.scheduleSource}',
+                      '${r.scheduleFields.isEmpty ? 'giờ chạy' : r.scheduleFields} theo ${r.scheduleSource}',
                   ].join(' · '),
                   style: t.textTheme.bodySmall?.copyWith(
                     color: t.colorScheme.onSurfaceVariant,

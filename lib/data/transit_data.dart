@@ -38,6 +38,9 @@ class TransitRoute {
 
   /// Where hours/headway/fare came from when not from OpenStreetMap.
   final String scheduleSource;
+
+  /// What [scheduleSource] supplied, e.g. "giờ chạy, giãn cách".
+  final String scheduleFields;
   final List<int> stops;
 
   /// Metres along the shape from the first stop, per stop.
@@ -64,6 +67,7 @@ class TransitRoute {
     required this.openingHours,
     required this.charge,
     required this.scheduleSource,
+    this.scheduleFields = '',
     required this.stops,
     required this.dist,
     required this.shapeIdx,
@@ -96,8 +100,9 @@ class TransitRoute {
   /// Whether the mapped `opening_hours` cover [t], read in Vietnam time
   /// (UTC+7). Missing or unreadable hours count as in service. A range past
   /// midnight belongs to the day it starts on; a lone departure time is
-  /// usable for the half hour before it.
-  bool inServiceAt(DateTime t) {
+  /// usable for the half hour before it. [wait] is the expected wait before
+  /// boarding, which must still fall inside a range.
+  bool inServiceAt(DateTime t, {Duration wait = Duration.zero}) {
     if (openingHours.trim().isEmpty) return true;
     final vn = t.toUtc().add(const Duration(hours: 7));
     final today = vn.weekday - 1, yesterday = (today + 6) % 7;
@@ -108,11 +113,13 @@ class TransitRoute {
           (
             int.parse(m[1]!) * 60 + int.parse(m[2]!),
             int.parse(m[3]!) * 60 + int.parse(m[4]!),
+            wait.inMinutes,
           ),
         for (final m in _timeRe.allMatches(rule.replaceAll(_rangeRe, '')))
           (
             int.parse(m[1]!) * 60 + int.parse(m[2]!) - 30,
             int.parse(m[1]!) * 60 + int.parse(m[2]!),
+            0,
           ),
       ];
       if (ranges.isEmpty) return true;
@@ -127,10 +134,12 @@ class TransitRoute {
         }
       }
       if (dayMatches.isEmpty) days.addAll([0, 1, 2, 3, 4, 5, 6]);
-      for (var (open, close) in ranges) {
+      for (var (open, close, w) in ranges) {
         if (close <= open) close += 1440;
-        if (days.contains(today) && now >= open && now <= close) return true;
-        if (days.contains(yesterday) && now + 1440 <= close) return true;
+        if (days.contains(today) && now >= open && now + w <= close) {
+          return true;
+        }
+        if (days.contains(yesterday) && now + 1440 + w <= close) return true;
       }
     }
     return false;
@@ -196,6 +205,7 @@ class TransitData {
         openingHours: r['oh'] as String,
         charge: r['charge'] as String,
         scheduleSource: r['sched'] as String? ?? '',
+        scheduleFields: r['schedf'] as String? ?? '',
         stops: (r['stops'] as List).cast<int>(),
         dist: (r['dist'] as List).cast<int>(),
         shapeIdx: (r['idx'] as List).cast<int>(),

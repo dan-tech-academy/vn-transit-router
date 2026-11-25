@@ -150,13 +150,28 @@ def stop_of(key,lat,lon,name):
     if key not in stop_idx:
         stop_idx[key]=len(stops); stops.append([round(lat,6),round(lon,6),name or ''])
     return stop_idx[key]
+def reinsert_strays(seq,roles):
+    """Mappers often append new stops after the terminus (platform_exit_only) or
+    before the origin (platform_entry_only). Put each such stop back where it
+    adds the least detour between two consecutive stops of the ordered part."""
+    lo=next((k for k,r in enumerate(roles) if r.endswith('entry_only')),0)
+    hi=max((k for k,r in enumerate(roles) if r.endswith('exit_only')),default=len(seq)-1)
+    if lo>=hi or (lo==0 and hi==len(seq)-1): return seq
+    core=seq[lo:hi+1]; strays=seq[:lo]+seq[hi+1:]
+    P=lambda i:(stops[i][0],stops[i][1])
+    for x in strays:
+        if x in core: continue
+        j=min(range(1,len(core)),key=lambda j:hav(P(core[j-1]),P(x))+hav(P(x),P(core[j]))-hav(P(core[j-1]),P(core[j])))
+        core.insert(j,x)
+    stats['stops_reordered']+=1
+    return core
 for rid,t,mem in rels:
     mode=MODES[t['route']]
     plat=[m for m in mem if m[2].startswith('platform') and m[0] in 'nw']
     stp=[m for m in mem if (m[2].startswith('stop') or m[2] in('bus_stop','from','to','station')) and m[0]=='n']
     bare=[m for m in mem if m[2]=='' and m[0]=='n']
     cand=stp if (mode=='metro' and len(stp)>=2) else plat if len(plat)>=2 else stp if len(stp)>=2 else bare
-    seq=[]
+    seq=[]; roles=[]
     for ty,ref,ro in cand:
         if ty=='n':
             if ref not in nodes: continue
@@ -165,7 +180,8 @@ for rid,t,mem in rels:
             if ref not in ways: continue
             p,tg=ways[ref]; la=sum(x[0] for x in p)/len(p); lo=sum(x[1] for x in p)/len(p); nm=tg.get('name:vi') or tg.get('name')
         i=stop_of((ty,ref),la,lo,nm)
-        if not seq or seq[-1]!=i: seq.append(i)
+        if not seq or seq[-1]!=i: seq.append(i); roles.append(ro)
+    seq=reinsert_strays(seq,roles)
     if len(seq)<2: stats['skip_few_stops']+=1; continue
     spts=[(stops[i][0],stops[i][1]) for i in seq]
     wl=[ways[ref][0] for ty,ref,ro in mem if ty=='w' and not ro.startswith('platform') and ref in ways]

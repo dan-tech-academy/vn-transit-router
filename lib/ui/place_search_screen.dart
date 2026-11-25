@@ -65,7 +65,7 @@ class _PlaceSearchScreenState extends State<PlaceSearchScreen> {
       final city = data.routes[s.routes.first].city;
       // Collapse platforms of one stop, keep same-name stops elsewhere.
       final same = seen[s.name] ??= [];
-      if (same.any((g) => distanceBetween(g, s.geo) < 250)) continue;
+      if (same.any((g) => distanceBetween(g, s.geo) < 400)) continue;
       same.add(s.geo);
       final lines = {for (final r in s.routes) data.routes[r].label}.take(5);
       out.add(
