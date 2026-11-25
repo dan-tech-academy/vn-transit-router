@@ -239,14 +239,18 @@ for rid,t,mem in rels:
 # unnamed stops: leave blank; drop unused
 print(dict(stats),'routes',len(routes),'stops',len(stops),'named',sum(1 for s in stops if s[2]),file=sys.stderr)
 # Both directions of a line belong to one city (the app groups them by it);
-# on disagreement take the one listed first in CITIES.
+# on disagreement take the one its network names, else the first in CITIES.
 rank={c[0]:k for k,c in enumerate(CITIES)}
 pairs={}
 for r in routes:
     if r['ref'] and r['from'] and r['to']: pairs[(r['mode'],r['ref'],r['from'],r['to'])]=r
 for (m,ref,a,b),r in pairs.items():
     o=pairs.get((m,ref,b,a))
-    if o and rank.get(r['city'],999)<rank.get(o['city'],999): o['city']=r['city']
+    if not o or o['city']==r['city']: continue
+    # A city named by the operator network wins over the size ranking.
+    named=[x['city'] for x in (r,o) if x['city'] in x.get('net','')]
+    if named: r['city']=o['city']=named[0]
+    elif rank.get(r['city'],999)<rank.get(o['city'],999): o['city']=r['city']
 data={'generated':sys.argv[1] if len(sys.argv)>1 else '','source':'OpenStreetMap contributors (ODbL), Geofabrik Vietnam extract','stops':stops,'routes':routes}
 raw=json.dumps(data,ensure_ascii=False,separators=(',',':')).encode()
 open('transit.json','wb').write(raw); open('transit.json.gz','wb').write(gzip.compress(raw,9))
