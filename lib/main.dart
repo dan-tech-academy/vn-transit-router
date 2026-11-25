@@ -35,8 +35,6 @@ class TransitApp extends StatelessWidget {
     );
     final app = context.watch<AppState>();
     return MaterialApp(
-      // Rebuild every screen when the language changes.
-      key: ValueKey(app.lang),
       title: 'Lộ Trình Việt',
       themeMode: app.themeMode,
       locale: Locale(app.lang),

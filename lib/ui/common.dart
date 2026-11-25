@@ -115,6 +115,8 @@ class OsmTileLayer extends StatelessWidget {
           : BuiltInMapCachingProvider.getOrCreateInstance(
               cacheDirectory: tileCacheDir,
               maxCacheSize: 300000000,
+              // Keep showing viewed tiles offline after the server's expiry.
+              overrideFreshAge: const Duration(days: 30),
             ),
     ),
   );

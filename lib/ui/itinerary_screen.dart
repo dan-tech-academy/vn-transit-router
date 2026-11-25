@@ -22,7 +22,7 @@ String itineraryShareText(
   final b = StringBuffer()
     ..writeln('${AppState.placeName(from)} → ${AppState.placeName(to)}')
     ..writeln(
-      '${fmtClock(departAt)} – ${fmtClock(departAt.add(Duration(seconds: it.seconds)))}'
+      '${fmtDateTime(departAt)} – ${fmtClock(departAt.add(Duration(seconds: it.seconds)))}'
       ' (${fmtDuration(it.seconds)})'
       '${it.fare > 0 ? ' · ${tr('vé', 'fare')} ~${fmtMoney(it.fare)}' : ''}',
     );
@@ -234,6 +234,25 @@ class _ItineraryScreenState extends State<ItineraryScreen> {
               children: [
                 ..._steps(context),
                 const SizedBox(height: 12),
+                if (_streets == false &&
+                    it.legs.any((l) => l.kind == LegKind.walk && l.metres > 0))
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      key: const Key('load-streets'),
+                      icon: const Icon(Icons.directions_walk_rounded, size: 18),
+                      label: Text(
+                        tr(
+                          'Tải đường đi bộ theo phố (cần mạng)',
+                          'Load street walking paths (online)',
+                        ),
+                      ),
+                      onPressed: () {
+                        setState(() => _streets = null);
+                        _loadStreets(context.read<AppState>());
+                      },
+                    ),
+                  ),
                 Text(
                   '${tr('Thời gian và giá vé là ước tính từ quãng đường và tần suất tuyến, không phải lịch chạy thực tế.', 'Times and fares are estimated from distance and line frequency, not real timetables.')} '
                   '${switch (_streets) {

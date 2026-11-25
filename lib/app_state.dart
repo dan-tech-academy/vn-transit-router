@@ -29,7 +29,7 @@ class AppState extends ChangeNotifier {
   String lang = 'vi';
   RoutePreference preference = RoutePreference.fastest;
   bool metroOnly = false;
-  bool streetWalking = true;
+  bool streetWalking = false;
 
   // Favourites.
   Place? home;
@@ -54,6 +54,11 @@ class AppState extends ChangeNotifier {
     if (to != null) this.to = to;
     tab = 0;
     planTick++;
+    notifyListeners();
+  }
+
+  void clearPlan() {
+    from = to = null;
     notifyListeners();
   }
 
@@ -106,7 +111,7 @@ class AppState extends ChangeNotifier {
       lang = appLang = prefs.getString('lang') ?? 'vi';
       preference = RoutePreference.values[prefs.getInt('pref') ?? 0];
       metroOnly = prefs.getBool('metroOnly') ?? false;
-      streetWalking = prefs.getBool('streetWalking') ?? true;
+      streetWalking = prefs.getBool('streetWalking') ?? false;
     } catch (e) {
       loadError = e;
     }

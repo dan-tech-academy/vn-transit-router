@@ -102,9 +102,33 @@ class _PlannerScreenState extends State<PlannerScreen> {
     _app.planWith(from: from ? p : null, to: from ? null : p);
   }
 
+  /// Saved trips keep the "My location" label, not where the user was.
+  Future<void> _openTrip(Place a, Place b) async {
+    Future<Place> fresh(Place p) async {
+      if (p.name != AppState.myLocationName) return p;
+      try {
+        return Place(p.name, '', await _app.locate());
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text('$e')));
+        }
+        rethrow;
+      }
+    }
+
+    try {
+      final from = await fresh(a), to = await fresh(b);
+      _app.planWith(from: from, to: to);
+    } catch (_) {}
+  }
+
   Future<void> _pickTime() async {
     final now = DateTime.now();
-    final base = _departAt ?? now;
+    // A picked time may have passed while the app stayed open.
+    final base = _departAt != null && _departAt!.isAfter(now)
+        ? _departAt!
+        : now;
     final choice = await showModalBottomSheet<String>(
       context: context,
       showDragHandle: true,
@@ -435,7 +459,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
                     icon: const Icon(Icons.close),
                     onPressed: () => app.toggleTrip(a, b),
                   ),
-                  onTap: () => app.planWith(from: a, to: b),
+                  onTap: () => _openTrip(a, b),
                 ),
               ),
             ),
@@ -517,6 +541,16 @@ class _PlannerScreenState extends State<PlannerScreen> {
               color: t.colorScheme.onSurfaceVariant,
             ),
           ),
+        ),
+        IconButton(
+          key: const Key('clear'),
+          visualDensity: VisualDensity.compact,
+          tooltip: tr('Xoá tìm kiếm', 'Clear search'),
+          icon: const Icon(Icons.close_rounded),
+          onPressed: () {
+            setState(() => _results = null);
+            app.clearPlan();
+          },
         ),
         IconButton(
           key: const Key('save-trip'),

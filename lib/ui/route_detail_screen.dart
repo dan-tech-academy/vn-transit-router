@@ -9,6 +9,15 @@ import '../routing/router.dart' as routing;
 import 'common.dart';
 import 'stop_detail_screen.dart';
 
+String _fields(String f) {
+  if (f.isEmpty) return tr('giờ chạy', 'schedule');
+  if (appLang != 'en') return f;
+  return f
+      .replaceAll('giờ chạy', 'hours')
+      .replaceAll('giãn cách', 'frequency')
+      .replaceAll('giá vé', 'fare');
+}
+
 class RouteDetailScreen extends StatefulWidget {
   final TransitRoute route;
   final List<TransitRoute>? directions;
@@ -145,7 +154,7 @@ class _RouteDetailScreenState extends State<RouteDetailScreen> {
                     if (r.charge.isNotEmpty) '${tr('vé', 'fare')} ${r.charge}',
                     if (r.operator.isNotEmpty) r.operator,
                     if (r.scheduleSource.isNotEmpty)
-                      '${r.scheduleFields.isEmpty ? 'giờ chạy' : r.scheduleFields} ${tr('theo', 'from')} ${r.scheduleSource}',
+                      '${_fields(r.scheduleFields)} ${tr('theo', 'from')} ${r.scheduleSource}',
                   ].join(' · '),
                   style: t.textTheme.bodySmall?.copyWith(
                     color: t.colorScheme.onSurfaceVariant,

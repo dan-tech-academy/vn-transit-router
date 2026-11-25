@@ -64,8 +64,8 @@ class SettingsScreen extends StatelessWidget {
             title: Text(tr('Đường đi bộ theo phố', 'Street walking paths')),
             subtitle: Text(
               tr(
-                'Cần mạng. Gửi toạ độ hai đầu chặng đi bộ đến routing.openstreetmap.de; khi tắt hoặc mất mạng sẽ vẽ đường thẳng.',
-                'Needs a connection. Sends the walk end points to routing.openstreetmap.de; when off or offline, walks are straight lines.',
+                'Tự tải khi mở lộ trình. Cần mạng và gửi toạ độ hai đầu chặng đi bộ (có thể gồm vị trí của bạn) đến routing.openstreetmap.de. Khi tắt, bạn vẫn tải được cho từng lộ trình.',
+                'Loads automatically when a trip is opened. Needs a connection and sends the walk end points (which may include your location) to routing.openstreetmap.de. When off, you can still load them per trip.',
               ),
             ),
             value: app.streetWalking,
@@ -76,8 +76,8 @@ class SettingsScreen extends StatelessWidget {
             leading: const Icon(Icons.map_outlined),
             title: Text(
               tr(
-                'Vùng bản đồ bạn đã xem được lưu trên máy (tối đa 300 MB) và hiện lại khi mất mạng.',
-                'Map areas you have viewed are kept on this device (up to 300 MB) and shown again when offline.',
+                'Vùng bản đồ bạn đã xem được lưu trên máy trong 30 ngày (dọn về khoảng 300 MB mỗi lần mở app) và hiện lại khi mất mạng.',
+                'Map areas you have viewed are kept on this device for 30 days (trimmed to about 300 MB at app start) and shown again when offline.',
               ),
             ),
             subtitle: Text(

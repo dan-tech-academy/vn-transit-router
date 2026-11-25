@@ -22,7 +22,8 @@ class _RoutesScreenState extends State<RoutesScreen> {
 
   /// Groups the directions of each line, per city.
   Map<String, List<List<TransitRoute>>> _group() {
-    final data = context.read<AppState>().data!;
+    // Watching also rebuilds this tab when the language changes.
+    final data = context.watch<AppState>().data!;
     final lines = <String, List<TransitRoute>>{};
     for (final r in data.routes) {
       (lines[r.lineKey] ??= []).add(r);

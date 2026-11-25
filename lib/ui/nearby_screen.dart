@@ -48,7 +48,7 @@ class _NearbyScreenState extends State<NearbyScreen> {
   @override
   Widget build(BuildContext context) {
     final t = Theme.of(context);
-    final data = context.read<AppState>().data!;
+    final data = context.watch<AppState>().data!;
     final near = data.stopsNear(_center, 600);
     return Scaffold(
       appBar: AppBar(title: Text(tr('Trạm gần đây', 'Nearby stops'))),
