@@ -106,20 +106,20 @@ class TransitRoute {
     if (openingHours.trim().isEmpty) return true;
     final vn = t.toUtc().add(const Duration(hours: 7));
     final today = vn.weekday - 1, yesterday = (today + 6) % 7;
-    final now = vn.hour * 60 + vn.minute;
+    final now = vn.hour * 60 + vn.minute + vn.second / 60;
     for (final rule in openingHours.toLowerCase().split(';')) {
       final ranges = [
         for (final m in _rangeRe.allMatches(rule))
           (
             int.parse(m[1]!) * 60 + int.parse(m[2]!),
             int.parse(m[3]!) * 60 + int.parse(m[4]!),
-            wait.inMinutes,
+            wait.inSeconds / 60,
           ),
         for (final m in _timeRe.allMatches(rule.replaceAll(_rangeRe, '')))
           (
             int.parse(m[1]!) * 60 + int.parse(m[2]!) - 30,
             int.parse(m[1]!) * 60 + int.parse(m[2]!),
-            0,
+            0.0,
           ),
       ];
       if (ranges.isEmpty) return true;

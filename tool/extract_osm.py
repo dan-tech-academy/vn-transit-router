@@ -153,7 +153,9 @@ def stop_of(key,lat,lon,name):
 def reinsert_strays(seq,roles):
     """Mappers often append new stops after the terminus (platform_exit_only) or
     before the origin (platform_entry_only). Put each such stop back where it
-    adds the least detour between two consecutive stops of the ordered part."""
+    adds the least detour between two consecutive stops of the ordered part.
+    Kept only when it clearly shortens the route, so a mis-tagged role in a
+    correctly ordered relation changes nothing."""
     lo=next((k for k,r in enumerate(roles) if r.endswith('entry_only')),0)
     hi=max((k for k,r in enumerate(roles) if r.endswith('exit_only')),default=len(seq)-1)
     if lo>=hi or (lo==0 and hi==len(seq)-1): return seq
@@ -163,6 +165,8 @@ def reinsert_strays(seq,roles):
         if x in core: continue
         j=min(range(1,len(core)),key=lambda j:hav(P(core[j-1]),P(x))+hav(P(x),P(core[j]))-hav(P(core[j-1]),P(core[j])))
         core.insert(j,x)
+    length=lambda q:sum(hav(P(a),P(b)) for a,b in zip(q,q[1:]))
+    if length(core)>0.85*length(seq): return seq
     stats['stops_reordered']+=1
     return core
 for rid,t,mem in rels:
@@ -232,6 +236,14 @@ for rid,t,mem in rels:
         'charge':t.get('charge',''),'stops':seq,'dist':dist,'idx':idx,'shape':enc(shape)})
 # unnamed stops: leave blank; drop unused
 print(dict(stats),'routes',len(routes),'stops',len(stops),'named',sum(1 for s in stops if s[2]),file=sys.stderr)
+# Both directions of a line belong to one city (the app groups them by it);
+# trust the direction whose stop sequence is shorter.
+pairs={}
+for r in routes:
+    if r['ref'] and r['from'] and r['to']: pairs[(r['mode'],r['ref'],r['from'],r['to'])]=r
+for (m,ref,a,b),r in pairs.items():
+    o=pairs.get((m,ref,b,a))
+    if o and o['city']!=r['city'] and r['dist'][-1]<=o['dist'][-1]: o['city']=r['city']
 data={'generated':sys.argv[1] if len(sys.argv)>1 else '','source':'OpenStreetMap contributors (ODbL), Geofabrik Vietnam extract','stops':stops,'routes':routes}
 raw=json.dumps(data,ensure_ascii=False,separators=(',',':')).encode()
 open('transit.json','wb').write(raw); open('transit.json.gz','wb').write(gzip.compress(raw,9))

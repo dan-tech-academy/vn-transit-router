@@ -304,7 +304,7 @@ class ItineraryCard extends StatelessWidget {
                 color: walkColor,
               ),
               Text(
-                '${(l.seconds / 60).round()}\'',
+                '${fmtMinutes(l.seconds)}\'',
                 style: const TextStyle(color: walkColor, fontSize: 13),
               ),
             ],

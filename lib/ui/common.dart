@@ -28,8 +28,12 @@ IconData modeIcon(TransitMode m) => switch (m) {
 LatLng ll(Geo g) => LatLng(g.lat, g.lon);
 Geo geoOf(LatLng p) => Geo(p.latitude, p.longitude);
 
+/// Whole minutes, never 0 for a leg that takes any time.
+int fmtMinutes(int seconds) =>
+    seconds <= 0 ? 0 : (seconds / 60).round().clamp(1, 1 << 31);
+
 String fmtDuration(int seconds) {
-  final m = (seconds / 60).round();
+  final m = fmtMinutes(seconds);
   if (m < 60) return '$m phút';
   return '${m ~/ 60} giờ ${m % 60} phút';
 }
