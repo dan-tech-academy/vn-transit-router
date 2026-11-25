@@ -2,7 +2,7 @@
 (parsed from xe-buyt.com route pages) into assets/data/transit.json.gz.
 
 Only TP. Hồ Chí Minh bus routes are matched, by route number. and only when both
-endpoints named on the page also appear on the OpenStreetMap route. A value
+endpoints named on the page are the termini of the OpenStreetMap route. A value
 already mapped in OpenStreetMap is kept; the schedule only fills what is missing.
 Fares on those pages are incomplete and outdated, so they are not used.
 """
@@ -15,10 +15,18 @@ def words(s):
     s = ''.join(c for c in s if unicodedata.category(c) != 'Mn')
     return set(re.findall(r'[a-z0-9]+', s)) - GENERIC
 
+def same_place(a, b):
+    wa = words(a)
+    return bool(wa) and len(wa & words(b)) / len(wa) > 0.5
+
 def same_line(sched_name, r):
+    """Both page endpoints are the route's two termini, in either order."""
     parts = [p for p in re.split(r'\s*[-–]\s*', sched_name) if p.strip()]
-    osm = words(' '.join([r['name'], r['from'], r['to']]))
-    return len(parts) >= 2 and all(words(p) & osm for p in (parts[0], parts[-1]))
+    if len(parts) < 2:
+        return False
+    a, b = parts[0], parts[-1]
+    return (same_place(a, r['from']) and same_place(b, r['to'])) or \
+           (same_place(a, r['to']) and same_place(b, r['from']))
 
 sched = json.load(open(sys.argv[1] if len(sys.argv) > 1 else 'tool/hcm_schedule.json'))
 path = 'assets/data/transit.json.gz'

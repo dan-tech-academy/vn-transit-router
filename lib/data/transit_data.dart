@@ -90,18 +90,31 @@ class TransitRoute {
   static final _dayRe = RegExp(
     r'\b(mo|tu|we|th|fr|sa|su)\b(?:\s*-\s*(mo|tu|we|th|fr|sa|su)\b)?',
   );
+  static final _timeRe = RegExp(r'(\d{1,2}):(\d{2})');
   static final _rangeRe = RegExp(r'(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})');
 
   /// Whether the mapped `opening_hours` cover [t], read in Vietnam time
-  /// (UTC+7). Hours that are missing or not plain day/time ranges count as
-  /// in service. A range past midnight belongs to the day it starts on.
+  /// (UTC+7). Missing or unreadable hours count as in service. A range past
+  /// midnight belongs to the day it starts on; a lone departure time is
+  /// usable for the half hour before it.
   bool inServiceAt(DateTime t) {
     if (openingHours.trim().isEmpty) return true;
     final vn = t.toUtc().add(const Duration(hours: 7));
     final today = vn.weekday - 1, yesterday = (today + 6) % 7;
     final now = vn.hour * 60 + vn.minute;
     for (final rule in openingHours.toLowerCase().split(';')) {
-      final ranges = _rangeRe.allMatches(rule).toList();
+      final ranges = [
+        for (final m in _rangeRe.allMatches(rule))
+          (
+            int.parse(m[1]!) * 60 + int.parse(m[2]!),
+            int.parse(m[3]!) * 60 + int.parse(m[4]!),
+          ),
+        for (final m in _timeRe.allMatches(rule.replaceAll(_rangeRe, '')))
+          (
+            int.parse(m[1]!) * 60 + int.parse(m[2]!) - 30,
+            int.parse(m[1]!) * 60 + int.parse(m[2]!),
+          ),
+      ];
       if (ranges.isEmpty) return true;
       final dayMatches = _dayRe.allMatches(rule).toList();
       final days = <int>{};
@@ -114,9 +127,7 @@ class TransitRoute {
         }
       }
       if (dayMatches.isEmpty) days.addAll([0, 1, 2, 3, 4, 5, 6]);
-      for (final m in ranges) {
-        final open = int.parse(m[1]!) * 60 + int.parse(m[2]!);
-        var close = int.parse(m[3]!) * 60 + int.parse(m[4]!);
+      for (var (open, close) in ranges) {
         if (close <= open) close += 1440;
         if (days.contains(today) && now >= open && now <= close) return true;
         if (days.contains(yesterday) && now + 1440 <= close) return true;

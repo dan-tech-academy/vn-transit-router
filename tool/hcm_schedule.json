@@ -1,4 +1,19 @@
 {
+ "127": {
+  "name": "An Thới Đông - Ngã ba Bà Xán",
+  "url": "https://xe-buyt.com/an-thoi-dong-nga-ba-ba-xan.html",
+  "first": "05:30",
+  "last": "21:00",
+  "trips": 58,
+  "tripMin": [
+   40,
+   40
+  ],
+  "hw": [
+   30,
+   60
+  ]
+ },
  "29": {
   "name": "Bến Phà Cát Lái - Chợ Nông Sản Thủ Đức",
   "url": "https://xe-buyt.com/ben-pha-cat-lai-cho-nong-san-thu-duc.html",
@@ -344,6 +359,21 @@
    20
   ]
  },
+ "146": {
+  "name": "Bến xe Miền Đông - Chợ Hiệp Thành",
+  "url": "https://xe-buyt.com/ben-xe-mien-dong-cho-hiep-thanh.html",
+  "first": "05:00",
+  "last": "19:00",
+  "trips": 110,
+  "tripMin": [
+   60,
+   60
+  ],
+  "hw": [
+   14,
+   16
+  ]
+ },
  "24": {
   "name": "Bến Xe Miền Đông - Hóc Môn",
   "url": "https://xe-buyt.com/ben-xe-mien-dong-hoc-mon.html",
@@ -374,6 +404,21 @@
    15
   ]
  },
+ "151": {
+  "name": "Bến xe Miền Tây - Bến xe An Sương",
+  "url": "https://xe-buyt.com/ben-xe-mien-tay-ben-xe-an-suong.html",
+  "first": "04:00",
+  "last": "21:00",
+  "trips": 272,
+  "tripMin": [
+   45,
+   45
+  ],
+  "hw": [
+   5,
+   15
+  ]
+ },
  "32": {
   "name": "Bến Xe Miền Tây - Bến Xe Ngã Tư Ga",
   "url": "https://xe-buyt.com/ben-xe-mien-tay-ben-xe-nga-tu-ga.html",
@@ -387,6 +432,36 @@
   "hw": [
    7,
    8
+  ]
+ },
+ "148": {
+  "name": "Bến xe Miền Tây - Gò Vấp",
+  "url": "https://xe-buyt.com/ben-xe-mien-tay-go-vap.html",
+  "first": "05:00",
+  "last": "18:45",
+  "trips": 138,
+  "tripMin": [
+   57,
+   62
+  ],
+  "hw": [
+   10,
+   15
+  ]
+ },
+ "139": {
+  "name": "Bến xe Miền Tây - Phú Xuân",
+  "url": "https://xe-buyt.com/ben-xe-mien-tay-phu-xuan.html",
+  "first": "05:00",
+  "last": "19:00",
+  "trips": 104,
+  "tripMin": [
+   60,
+   70
+  ],
+  "hw": [
+   13,
+   20
   ]
  },
  "58": {
@@ -599,6 +674,21 @@
    17
   ]
  },
+ "152": {
+  "name": "Khu dân cư Trung Sơn - Bến Thành - Sân bay Tân Sơn Nhất",
+  "url": "https://xe-buyt.com/khu-dan-cu-trung-son-ben-thanh-san-bay-tan-son-nhat.html",
+  "first": "05:30",
+  "last": "18:30",
+  "trips": 100,
+  "tripMin": [
+   50,
+   55
+  ],
+  "hw": [
+   12,
+   21
+  ]
+ },
  "53": {
   "name": "Lê Hồng Phong - Đại học Quốc gia",
   "url": "https://xe-buyt.com/le-hong-phong-dai-hoc-quoc-gia.html",
@@ -626,6 +716,21 @@
   ],
   "hw": [
    7,
+   10
+  ]
+ },
+ "C010": {
+  "name": "Phổ Quang - KCN Hiệp Phước",
+  "url": "https://xe-buyt.com/pho-quang-kcn-hiep-phuoc.html",
+  "first": "00:00",
+  "last": "00:00",
+  "trips": 0,
+  "tripMin": [
+   75,
+   75
+  ],
+  "hw": [
+   10,
    10
   ]
  },

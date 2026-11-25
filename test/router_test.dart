@@ -179,7 +179,12 @@ void main() {
     expect(late.inServiceAt(vn(6, 0, 30)), isTrue);
     expect(late.inServiceAt(vn(6, 2)), isFalse);
     expect(withHours('Mo-SU 05:00-21:00').inServiceAt(vn(11, 12)), isTrue);
-    expect(withHours('Mo-Fr 07:10').inServiceAt(vn(5, 3)), isTrue);
+    final mixed = withHours('Mo-Fr 06:08-06:15; Sa 06:15');
+    expect(mixed.inServiceAt(vn(11, 6, 10)), isFalse);
+    expect(mixed.inServiceAt(vn(10, 6, 0)), isTrue);
+    expect(mixed.inServiceAt(vn(10, 9)), isFalse);
+    expect(withHours('Mo-Fr 07:00,17:15').inServiceAt(vn(5, 17)), isTrue);
+    expect(withHours('unknown').inServiceAt(vn(5, 3)), isTrue);
     expect(withHours('').inServiceAt(vn(5, 3)), isTrue);
   });
 
