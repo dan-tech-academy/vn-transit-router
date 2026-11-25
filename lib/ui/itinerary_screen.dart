@@ -29,7 +29,8 @@ String itineraryShareText(
   var clock = departAt;
   var n = 1;
   for (final l in it.legs) {
-    final at = fmtClock(clock);
+    // A ride is listed at its boarding time, after the wait.
+    final at = fmtClock(clock.add(Duration(seconds: l.waitSeconds)));
     clock = clock.add(Duration(seconds: l.seconds + l.waitSeconds));
     if (l.kind == LegKind.walk) {
       b.writeln(
