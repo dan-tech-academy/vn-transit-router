@@ -31,11 +31,12 @@ jobs:
           KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           echo "$KEYSTORE_BASE64" | base64 -d > android/upload-keystore.jks
+          # Backslashes are escapes in a .properties file.
           {
             echo "storeFile=upload-keystore.jks"
-            echo "storePassword=$STORE_PASSWORD"
-            echo "keyAlias=$KEY_ALIAS"
-            echo "keyPassword=$KEY_PASSWORD"
+            echo "storePassword=${STORE_PASSWORD//\\/\\\\}"
+            echo "keyAlias=${KEY_ALIAS//\\/\\\\}"
+            echo "keyPassword=${KEY_PASSWORD//\\/\\\\}"
           } > android/key.properties
       - run: flutter pub get
       - run: flutter build appbundle --release
