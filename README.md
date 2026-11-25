@@ -16,7 +16,11 @@
 - **Chi tiết lộ trình**: bản đồ từng chặng và dòng thời gian (đi bộ đến trạm nào, lên tuyến nào, xuống ở đâu).
 - **Tra cứu tuyến**: theo tỉnh/thành, tìm theo số tuyến hoặc tên (không cần gõ dấu), xem lộ trình hai chiều, danh sách trạm và các tuyến chuyển tiếp tại mỗi trạm.
 - **Trạm gần đây**: trạm trong bán kính 600 m quanh vị trí hiện tại hoặc tâm bản đồ.
-- Tìm đường chạy hoàn toàn trên máy với dữ liệu đóng gói sẵn; chỉ ô bản đồ và tìm địa danh cần mạng.
+- **Tuỳ chọn**: chọn ngày giờ khởi hành; ưu tiên nhanh nhất, ít đi bộ, ít chuyển tuyến hoặc chỉ metro.
+- **Yêu thích**: nhà, cơ quan, địa điểm và lộ trình đã lưu.
+- **Chi tiết trạm**: các tuyến đi qua trạm, tìm đường từ/đến trạm.
+- **Chia sẻ lộ trình**, giao diện sáng/tối, tiếng Việt/tiếng Anh.
+- Tìm đường chạy hoàn toàn trên máy với dữ liệu đóng gói sẵn. Cần mạng: ô bản đồ (vùng đã xem được lưu lại để xem offline), tìm địa danh, và đường đi bộ theo phố nếu người dùng chọn tải.
 
 ## Dữ liệu
 
@@ -34,7 +38,8 @@ Hiện có 923 chiều tuyến và 15.176 trạm: Hà Nội, TP.HCM, Đà Nẵng
 - **Không có lịch chạy thời gian thực.** Thời gian đi tính từ quãng đường và tốc độ trung bình theo loại phương tiện; thời gian chờ bằng nửa giãn cách chuyến (giá trị mặc định khi tuyến không có số liệu).
 - **Giá vé là ước tính**: lấy giá ghi trên OSM nếu có, nếu không thì đoán theo thành phố và cự ly tuyến.
 - Độ phủ và độ chính xác của tuyến/trạm phụ thuộc OSM; một số tuyến thiếu trạm.
-- Chặng đi bộ vẽ theo đường thẳng, quãng đường nhân hệ số 1,3.
+- Chặng đi bộ mặc định vẽ theo đường thẳng, quãng đường nhân hệ số 1,3; đường theo phố chỉ có khi tải online từ OSRM.
+- Không có vị trí xe hay giờ đến thực tế: chưa có nguồn dữ liệu mở.
 
 ## Cài đặt và chạy
 
