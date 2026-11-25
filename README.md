@@ -75,6 +75,26 @@ curl -L -o vietnam.osm.pbf https://download.geofabrik.de/asia/vietnam-latest.osm
 python3 tool/extract_osm.py $(date +%F) # tạo transit.json.gz từ OSM
 mv transit.json.gz assets/data/ && rm transit.json
 python3 tool/merge_schedule.py         # bổ sung giờ chạy từ tool/hcm_schedule.json
+python3 tool/fix_routes.py             # sửa riêng từng tuyến theo tool/route_fixes.json
 ```
 
 `tool/parse_xebuyt.py` tạo `hcm_schedule.json` từ các trang tuyến đã lưu của xe-buyt.com.
+
+## Phát hành
+
+Mã ứng dụng: `dev.dantech.vn_transit` (Android), `dev.dantech.vnTransit` (iOS). Phiên bản đặt ở `version:` trong `pubspec.yaml`.
+
+**Android:** tạo khoá một lần, rồi chép `android/key.properties.example` thành `android/key.properties` và điền thông tin (hai tệp này không được commit).
+
+```bash
+keytool -genkey -v -keystore android/upload-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+flutter build appbundle --release   # build/app/outputs/bundle/release/app-release.aab
+```
+
+Không có `key.properties` thì bản release được ký bằng khoá debug, chỉ để cài thử.
+
+**iOS:** cần máy macOS và tài khoản Apple Developer. Mở `ios/Runner.xcworkspace`, chọn Team ở Signing & Capabilities, rồi `flutter build ipa --release`.
+
+**CI:** workflow `Release` (chạy tay hoặc khi đẩy tag `v*`) build AAB/APK và bản iOS chưa ký. Để ký Android trên CI, thêm các secret `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`.
+
+Biểu tượng: sửa `assets/icon/` rồi chạy `dart run flutter_launcher_icons`.

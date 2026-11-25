@@ -479,7 +479,9 @@ class _PlannerScreenState extends State<PlannerScreen> {
                 child: ListTile(
                   leading: const Icon(Icons.star_rounded),
                   title: Text(p.name),
-                  subtitle: p.subtitle.isEmpty ? null : Text(p.subtitle),
+                  subtitle: p.subtitle.isEmpty
+                      ? null
+                      : Text(trStopSubtitle(p.subtitle)),
                   trailing: IconButton(
                     tooltip: tr('Xoá', 'Remove'),
                     icon: const Icon(Icons.close),

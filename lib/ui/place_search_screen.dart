@@ -250,7 +250,11 @@ class _PlaceSearchScreenState extends State<PlaceSearchScreen> {
     title: Text(p.name, maxLines: 1, overflow: TextOverflow.ellipsis),
     subtitle: p.subtitle.isEmpty
         ? null
-        : Text(p.subtitle, maxLines: 1, overflow: TextOverflow.ellipsis),
+        : Text(
+            trStopSubtitle(p.subtitle),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
     trailing: IconButton(
       tooltip: tr('Lưu địa điểm', 'Save place'),
       icon: Icon(
