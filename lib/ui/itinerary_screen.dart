@@ -87,6 +87,9 @@ class _ItineraryScreenState extends State<ItineraryScreen> {
   /// null: loading, true: walks follow streets, false: straight lines.
   bool? _streets = false;
 
+  /// The street walk is too long to catch a vehicle with a fixed departure.
+  bool _tooLate = false;
+
   @override
   void initState() {
     super.initState();
@@ -121,6 +124,7 @@ class _ItineraryScreenState extends State<ItineraryScreen> {
           ? null
           : withWalks(itinerary.legs, [for (final l in legs) l!], departAt);
       _streets = timed != null;
+      _tooLate = timed == null && !legs.contains(null);
       if (timed != null) itinerary = Itinerary(timed);
     });
   }
@@ -239,6 +243,7 @@ class _ItineraryScreenState extends State<ItineraryScreen> {
                 ..._steps(context),
                 const SizedBox(height: 12),
                 if (_streets == false &&
+                    !_tooLate &&
                     it.legs.any((l) => l.kind == LegKind.walk && l.metres > 0))
                   Align(
                     alignment: Alignment.centerLeft,
@@ -262,6 +267,7 @@ class _ItineraryScreenState extends State<ItineraryScreen> {
                   '${switch (_streets) {
                     null => tr('Đang tải đường đi bộ theo phố...', 'Loading street walking paths...'),
                     true => tr('Đường đi bộ theo phố từ OSRM (routing.openstreetmap.de).', 'Street walking paths from OSRM (routing.openstreetmap.de).'),
+                    false when _tooLate => tr('Đi bộ theo phố lâu hơn ước tính nên có thể lỡ chuyến xe chạy theo giờ cố định; lộ trình giữ ước tính đường thẳng.', 'Walking along streets takes longer than estimated and may miss a fixed departure; the straight-line estimate is kept.'),
                     false => tr('Đường đi bộ vẽ theo đường thẳng.', 'Walking is drawn as straight lines.'),
                   }}',
                   key: const Key('walk-note'),
