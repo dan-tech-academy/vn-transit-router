@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:vn_transit/ui/common.dart';
 import 'package:vn_transit/data/geo.dart';
 import 'package:vn_transit/data/transit_data.dart';
 import 'package:vn_transit/l10n.dart';
@@ -84,6 +85,16 @@ void main() {
     expect(vi, contains('Chợ Bến Thành → Suối Tiên'));
     expect(vi, contains('Đi bộ'));
     expect(vi, contains('${it.legs.length}. '));
+    // A ride is listed when it is boarded, after the walk and the wait.
+    final ride = it.legs.indexWhere((l) => l.kind == LegKind.ride);
+    expect(it.legs[ride].waitSeconds, greaterThan(0));
+    final before = it.legs
+        .take(ride)
+        .fold(0, (a, l) => a + l.seconds + l.waitSeconds);
+    final boards = noon.add(
+      Duration(seconds: before + it.legs[ride].waitSeconds),
+    );
+    expect(vi, contains('${ride + 1}. ${fmtClock(boards)} '));
     appLang = 'en';
     final en = itineraryShareText(it, from, to, noon);
     expect(en, contains('Walk'));
