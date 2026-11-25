@@ -116,8 +116,12 @@ class _ItineraryScreenState extends State<ItineraryScreen> {
     if (!mounted) return;
     setState(() {
       // Keep the estimate unless every walk was routed.
-      _streets = !legs.contains(null);
-      if (_streets!) itinerary = Itinerary([for (final l in legs) l!]);
+      // ... and no fixed departure is missed by the longer walk.
+      final timed = legs.contains(null)
+          ? null
+          : withWalks(itinerary.legs, [for (final l in legs) l!], departAt);
+      _streets = timed != null;
+      if (timed != null) itinerary = Itinerary(timed);
     });
   }
 

@@ -95,6 +95,46 @@ class Leg {
     fromName: fromName,
     toName: toName,
   );
+
+  Leg _waiting(int wait) => Leg.ride(
+    route: route!,
+    fromPos: fromPos,
+    toPos: toPos,
+    seconds: seconds,
+    waitSeconds: wait,
+    metres: metres,
+    path: path,
+    fromName: fromName,
+    toName: toName,
+    fare: fare,
+  );
+}
+
+/// [planned] with its walks replaced by [walked], leg for leg. A vehicle that
+/// leaves at a fixed time on [day] still leaves then, so the wait for it
+/// absorbs the change in walking time. Null when a walk now takes so long
+/// that such a vehicle is missed.
+List<Leg>? withWalks(List<Leg> planned, List<Leg> walked, DateTime day) {
+  final out = <Leg>[];
+  var was = 0, now = 0;
+  for (var i = 0; i < planned.length; i++) {
+    final p = planned[i];
+    if (p.kind == LegKind.walk) {
+      was += p.seconds;
+      now += walked[i].seconds;
+      out.add(walked[i]);
+      continue;
+    }
+    var wait = p.waitSeconds;
+    if (p.route!.departuresOn(day) != null) {
+      wait += was - now;
+      if (wait < 0) return null;
+    }
+    was += p.waitSeconds + p.seconds;
+    now += wait + p.seconds;
+    out.add(wait == p.waitSeconds ? p : p._waiting(wait));
+  }
+  return out;
 }
 
 class Itinerary {

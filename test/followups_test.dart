@@ -110,6 +110,35 @@ void main() {
       );
     });
 
+    test('street walks keep a fixed departure at its time', () {
+      const cayMe = Geo(10.963617, 106.671498);
+      const hungVuong = Geo(11.035222, 106.678774);
+      final at = DateTime.utc(2026, 11, 25, 10);
+      final it = router
+          .plan(cayMe, hungVuong, departAt: at)
+          .firstWhere(
+            (i) =>
+                i.legs.first.kind == LegKind.walk &&
+                i.legs[1].route!.departuresOn(at) != null,
+          );
+      Leg slower(Leg l, int by) => l.kind == LegKind.walk
+          ? l.rewalk(l.path, l.metres, l.seconds + by)
+          : l;
+      final wait = it.legs[1].waitSeconds;
+      final late = withWalks(it.legs, [
+        slower(it.legs.first, wait),
+        ...it.legs.skip(1),
+      ], at)!;
+      expect(late[1].waitSeconds, 0);
+      expect(
+        withWalks(it.legs, [
+          slower(it.legs.first, wait + 60),
+          ...it.legs.skip(1),
+        ], at),
+        isNull,
+      );
+    });
+
     test('HCMC metro line 1 does not run at night', () {
       const benThanh = Geo(10.7725, 106.6980);
       const suoiTien = Geo(10.8665, 106.8030);
