@@ -97,4 +97,4 @@ Không có `key.properties` thì bản release được ký bằng khoá debug, 
 
 **CI:** workflow `Release` (chạy tay hoặc khi đẩy tag `v*`) build AAB/APK và bản iOS chưa ký. Để ký Android trên CI, thêm các secret `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`.
 
-Biểu tượng: sửa `assets/icon/` rồi chạy `dart run flutter_launcher_icons`.
+Biểu tượng: sửa `tool/make_icon.py`, chạy `python3 tool/make_icon.py` (cần Pillow: `pip install pillow`) để vẽ lại `assets/icon/`, rồi chạy `dart run flutter_launcher_icons`.
