@@ -160,7 +160,7 @@ class _ItineraryScreenState extends State<ItineraryScreen> {
         dotMarker(l.path.first, modeColor(l.route!)),
         dotMarker(l.path.last, modeColor(l.route!)),
       ],
-      pinMarker(from.geo, const Color(0xFF0E9F6E), Icons.trip_origin),
+      pinMarker(from.geo, const Color(0xFF4D7C0F), Icons.trip_origin),
       pinMarker(to.geo, const Color(0xFFDC2626), Icons.location_on),
     ];
     return Scaffold(

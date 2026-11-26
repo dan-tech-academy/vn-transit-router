@@ -17,7 +17,7 @@ Color modeColor(TransitRoute r) {
     if (v != null) return Color(0xFF000000 | v);
   }
   return switch (r.mode) {
-    TransitMode.bus => const Color(0xFF0E9F6E),
+    TransitMode.bus => const Color(0xFF4D7C0F),
     TransitMode.metro => const Color(0xFF2563EB),
     TransitMode.ferry => const Color(0xFF0891B2),
   };
