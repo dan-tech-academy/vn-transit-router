@@ -150,6 +150,7 @@ class _ItineraryScreenState extends State<ItineraryScreen> {
     return Scaffold(
       body: Stack(
         children: [
+          mapStatusBar,
           FlutterMap(
             options: MapOptions(
               initialCameraFit: samePoint

@@ -33,6 +33,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
   final _map = MapController();
   final _sheet = DraggableScrollableController();
   static const _sheetSize = 0.46;
+  static const _sheetMin = 0.14;
 
   /// Stops drawn around the map centre while no trip is shown.
   List<Stop> _stops = const [];
@@ -99,7 +100,24 @@ class _PlannerScreenState extends State<PlannerScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       // Bring the sheet back so the trip on the map is not covered.
-      if (_sheet.isAttached) _sheet.reset();
+      final h = _map.camera.nonRotatedSize.height;
+      final top = MediaQuery.paddingOf(context).top + 250;
+      // On short screens the sheet drops lower to leave the trip some map.
+      final sheet = ((h - top - 140) / h).clamp(_sheetMin, _sheetSize);
+      if (_sheet.isAttached) {
+        _sheet.reset();
+        if (sheet < _sheetSize) {
+          // After the reset has scrolled the list back to the top.
+          Future.delayed(const Duration(milliseconds: 300), () {
+            if (!mounted || !_sheet.isAttached) return;
+            _sheet.animateTo(
+              sheet,
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOut,
+            );
+          });
+        }
+      }
       if (shown.isEmpty) return;
       final pts = [for (final l in shown.first.legs) ...l.path.map(ll)];
       if (pts.isEmpty) return;
@@ -110,11 +128,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
       _map.fitCamera(
         CameraFit.bounds(
           bounds: LatLngBounds.fromPoints(pts),
-          padding: fitPadding(
-            _map.camera.nonRotatedSize.height,
-            MediaQuery.paddingOf(context).top + 250,
-            _map.camera.nonRotatedSize.height * _sheetSize + 16,
-          ),
+          padding: fitPadding(h, top, h * sheet + 16),
         ),
       );
     });
@@ -232,6 +246,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
     return Scaffold(
       body: Stack(
         children: [
+          mapStatusBar,
           FlutterMap(
             mapController: _map,
             options: MapOptions(
@@ -291,7 +306,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
             context,
             controller: _sheet,
             initial: _sheetSize,
-            min: 0.14,
+            min: _sheetMin,
             max: 0.7,
             children: (_) => _results == null ? _idle(app) : _resultList(app),
           ),
@@ -630,7 +645,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
           child: Text(
             tr(
               '${results.length} lộ trình · khởi hành ${fmtClock(_searchedAt)}',
-              '${results.length} options · leaving ${fmtClock(_searchedAt)}',
+              '${results.length} option${results.length == 1 ? '' : 's'} · leaving ${fmtClock(_searchedAt)}',
             ),
             style: t.textTheme.labelLarge?.copyWith(
               color: t.colorScheme.onSurfaceVariant,
@@ -748,14 +763,14 @@ class ItineraryCard extends StatelessWidget {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
+              Icon(
                 Icons.directions_walk_rounded,
                 size: 18,
-                color: walkColor,
+                color: walkInk(context),
               ),
               Text(
                 '${fmtMinutes(l.seconds)}\'',
-                style: const TextStyle(color: walkColor, fontSize: 13),
+                style: TextStyle(color: walkInk(context), fontSize: 13),
               ),
             ],
           ),

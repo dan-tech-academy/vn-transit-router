@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -8,6 +9,13 @@ import '../l10n.dart';
 import '../routing/router.dart';
 
 const walkColor = Color(0xFFB45309);
+
+/// Walking colour for text and icons drawn on the app's own surfaces.
+Color walkInk(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.dark
+    ? const Color(0xFFFBBF24)
+    : walkColor;
+
 const originColor = Color(0xFF4D7C0F);
 const destColor = Color(0xFFDC2626);
 
@@ -287,3 +295,13 @@ Widget mapSheet(
     ),
   );
 }
+
+/// Map tiles stay light in the dark theme, so status icons must stay dark.
+const mapStatusBar = AnnotatedRegion<SystemUiOverlayStyle>(
+  value: SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.dark,
+    statusBarBrightness: Brightness.light,
+  ),
+  child: SizedBox.expand(),
+);
