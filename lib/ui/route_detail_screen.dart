@@ -186,7 +186,12 @@ class _RouteDetailScreenState extends State<RouteDetailScreen> {
                       ),
                   ],
                 ),
-                const OsmAttribution(),
+                // The map ends above the system bar: no inset for the credit.
+                MediaQuery.removePadding(
+                  context: context,
+                  removeBottom: true,
+                  child: const OsmAttribution(),
+                ),
               ],
             ),
           ),
