@@ -23,9 +23,13 @@ class TransitApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const seed = Color(0xFF0E9F6E);
+    const seed = Color(0xFF84CC16);
     ThemeData theme(Brightness b) => ThemeData(
-      colorScheme: ColorScheme.fromSeed(seedColor: seed, brightness: b),
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: seed,
+        brightness: b,
+        dynamicSchemeVariant: DynamicSchemeVariant.vibrant,
+      ),
       useMaterial3: true,
       cardTheme: CardThemeData(
         elevation: 0,
@@ -35,7 +39,7 @@ class TransitApp extends StatelessWidget {
     );
     final app = context.watch<AppState>();
     return MaterialApp(
-      title: 'Lộ Trình Việt',
+      title: 'Ghee',
       themeMode: app.themeMode,
       locale: Locale(app.lang),
       supportedLocales: const [Locale('vi'), Locale('en')],

@@ -1,0 +1,6 @@
+# Copy to android/key.properties (ignored by git) and fill in.
+# storeFile is relative to the android/ directory.
+storeFile=upload-keystore.jks
+storePassword=
+keyAlias=upload
+keyPassword=

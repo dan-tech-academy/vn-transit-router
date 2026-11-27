@@ -95,6 +95,46 @@ class Leg {
     fromName: fromName,
     toName: toName,
   );
+
+  Leg _waiting(int wait) => Leg.ride(
+    route: route!,
+    fromPos: fromPos,
+    toPos: toPos,
+    seconds: seconds,
+    waitSeconds: wait,
+    metres: metres,
+    path: path,
+    fromName: fromName,
+    toName: toName,
+    fare: fare,
+  );
+}
+
+/// [planned] with its walks replaced by [walked], leg for leg. A vehicle that
+/// leaves at a fixed time on [day] still leaves then, so the wait for it
+/// absorbs the change in walking time. Null when a walk now takes so long
+/// that such a vehicle is missed.
+List<Leg>? withWalks(List<Leg> planned, List<Leg> walked, DateTime day) {
+  final out = <Leg>[];
+  var was = 0, now = 0;
+  for (var i = 0; i < planned.length; i++) {
+    final p = planned[i];
+    if (p.kind == LegKind.walk) {
+      was += p.seconds;
+      now += walked[i].seconds;
+      out.add(walked[i]);
+      continue;
+    }
+    var wait = p.waitSeconds;
+    if (p.route!.departuresOn(day) != null) {
+      wait += was - now;
+      if (wait < 0) return null;
+    }
+    was += p.waitSeconds + p.seconds;
+    now += wait + p.seconds;
+    out.add(wait == p.waitSeconds ? p : p._waiting(wait));
+  }
+  return out;
 }
 
 class Itinerary {
@@ -152,6 +192,31 @@ class TransitRouter {
 
   Set<int> _closed = const {};
 
+  /// Longest wait accepted for a line that runs at fixed departure times.
+  static const maxTimedWait = 3600;
+
+  /// Per route with fixed departures: when each one leaves the first stop,
+  /// in seconds after the trip start. Negative for vehicles already under way.
+  Map<int, List<int>> _timed = const {};
+
+  /// How much a second on foot costs in the search, relative to riding.
+  double _walkWeight = 1;
+
+  void _loadDepartures(DateTime at) {
+    final vn = at.toUtc().add(const Duration(hours: 7));
+    final now = vn.hour * 3600 + vn.minute * 60 + vn.second;
+    _timed = {};
+    for (final r in data.routes) {
+      if (r.departuresOn(at) == null) continue;
+      _timed[r.index] = [
+        for (final day in const [-1, 0, 1])
+          for (final m
+              in r.departuresOn(at.add(Duration(days: day))) ?? const <int>[])
+            day * 86400 + m * 60 - now,
+      ];
+    }
+  }
+
   /// Returns up to [maxResults] distinct itineraries, best first. Routes whose
   /// mapped service hours exclude [departAt] are not used. Empty when the
   /// places are too far apart to walk and no transit connects them.
@@ -166,11 +231,18 @@ class TransitRouter {
     Set<TransitMode>? modes,
   }) {
     _preference = preference;
+    // Matches the ranking: a metre on foot costs 3 s more than its duration.
+    _walkWeight = preference == RoutePreference.lessWalking
+        ? 1 + 3 * config.walkSpeed
+        : 1;
+    _timed = const {};
+    if (departAt != null) _loadDepartures(departAt);
     _closed = {
       for (final r in data.routes)
         if ((modes != null && !modes.contains(r.mode)) ||
             // Boarding happens after the average wait.
             (departAt != null &&
+                !_timed.containsKey(r.index) &&
                 !r.inServiceAt(
                   departAt,
                   wait: Duration(seconds: waitSeconds(r)),
@@ -225,7 +297,14 @@ class TransitRouter {
         }
       }
     }
-    results.removeWhere((it) => it.seconds > walk.seconds && direct < 5000);
+    // Riding has to beat walking the whole way, by time or by preference.
+    results.removeWhere(
+      (it) =>
+          direct < 5000 &&
+          (preference == RoutePreference.lessWalking
+              ? _score(it) > _score(walk)
+              : it.seconds > walk.seconds),
+    );
     results.sort((a, b) => _score(a).compareTo(_score(b)));
     if (direct <= 3000 || (results.isEmpty && direct <= maxWalkOnlyMetres)) {
       results.add(walk);
@@ -274,8 +353,12 @@ class TransitRouter {
   ) {
     final n = data.stops.length;
     final rounds = config.maxRides;
-    // tau[k][s]: earliest arrival at s using at most k rides.
+    // tau[k][s]: cheapest arrival at s using at most k rides, in seconds
+    // with walking weighted by the preference. clock[k][s] is its real time.
     final tau = List.generate(rounds + 1, (_) => List.filled(n, _inf));
+    final clock = List.generate(rounds + 1, (_) => List.filled(n, _inf));
+    final pWait = List.generate(rounds + 1, (_) => List.filled(n, 0));
+    int cost(int walkSec) => (walkSec * _walkWeight).round();
     // Parent pointers: ride (route, boardPos, alightPos) or walk (fromStop).
     final pRoute = List.generate(rounds + 1, (_) => List.filled(n, -1));
     final pBoard = List.generate(rounds + 1, (_) => List.filled(n, -1));
@@ -284,16 +367,21 @@ class TransitRouter {
 
     var marked = <int>{};
     for (final (s, d) in access) {
-      tau[0][s.index] = walkSeconds(d);
+      tau[0][s.index] = cost(walkSeconds(d));
+      clock[0][s.index] = walkSeconds(d);
       marked.add(s.index);
     }
-    final egressTime = {for (final (s, d) in egress) s.index: walkSeconds(d)};
+    final egressTime = {
+      for (final (s, d) in egress) s.index: cost(walkSeconds(d)),
+    };
 
     for (var k = 1; k <= rounds && marked.isNotEmpty; k++) {
       final cur = tau[k];
       final prev = tau[k - 1];
+      final curT = clock[k], prevT = clock[k - 1];
       for (var s = 0; s < n; s++) {
         cur[s] = prev[s];
+        curT[s] = prevT[s];
       }
       final routesToScan = <int>{};
       for (final s in marked) {
@@ -304,8 +392,10 @@ class TransitRouter {
         final r = data.routes[ri];
         if (banned.contains(r.lineKey) || _closed.contains(ri)) continue;
         final cum = _cum[ri];
-        final wait = waitSeconds(r);
+        final timed = _timed[ri];
         var bestOffset = _inf;
+        var timeOffset = 0;
+        var boardWait = 0;
         var boardPos = -1;
         for (var i = 0; i < r.stops.length; i++) {
           final s = r.stops[i];
@@ -313,17 +403,31 @@ class TransitRouter {
             final arr = bestOffset + cum[i];
             if (arr < cur[s]) {
               cur[s] = arr;
+              curT[s] = timeOffset + cum[i];
               pRoute[k][s] = ri;
               pBoard[k][s] = boardPos;
               pAlight[k][s] = i;
+              pWait[k][s] = boardWait;
               pWalkFrom[k][s] = -1;
               next.add(s);
             }
           }
           if (prev[s] < _inf) {
+            var wait = waitSeconds(r);
+            if (timed != null) {
+              // Wait for the next vehicle to reach this stop.
+              wait = _inf;
+              for (final d in timed) {
+                final w = d + cum[i] - prevT[s];
+                if (w >= 0 && w < wait) wait = w;
+              }
+              if (wait > maxTimedWait) continue;
+            }
             final off = prev[s] + wait - cum[i];
             if (off < bestOffset) {
               bestOffset = off;
+              timeOffset = prevT[s] + wait - cum[i];
+              boardWait = wait;
               boardPos = i;
             }
           }
@@ -334,12 +438,13 @@ class TransitRouter {
       // cannot hide another stop's outgoing transfers.
       // The ride parent of a stop is kept when a walk later improves it, so
       // a transfer is rebuilt from the same arrival it was scored with.
-      final rideArrivals = [for (final s in next) (s, cur[s])];
-      for (final (s, at) in rideArrivals) {
+      final rideArrivals = [for (final s in next) (s, cur[s], curT[s])];
+      for (final (s, at, atT) in rideArrivals) {
         for (final (o, sec) in _footpaths[s]) {
-          final arr = at + sec;
+          final arr = at + cost(sec);
           if (arr < cur[o]) {
             cur[o] = arr;
+            curT[o] = atT + sec;
             pWalkFrom[k][o] = s;
             next.add(o);
           }
@@ -372,6 +477,7 @@ class TransitRouter {
         pBoard,
         pAlight,
         pWalkFrom,
+        pWait,
         originName,
         destName,
       );
@@ -390,6 +496,7 @@ class TransitRouter {
     List<List<int>> pBoard,
     List<List<int>> pAlight,
     List<List<int>> pWalkFrom,
+    List<List<int>> pWait,
     String originName,
     String destName,
   ) {
@@ -433,7 +540,7 @@ class TransitRouter {
           fromPos: bp,
           toPos: ap,
           seconds: cum[ap] - cum[bp],
-          waitSeconds: waitSeconds(r),
+          waitSeconds: pWait[round][s],
           metres: metres,
           path: r.shapeBetween(bp, ap),
           fromName: data.stops[r.stops[bp]].displayName,

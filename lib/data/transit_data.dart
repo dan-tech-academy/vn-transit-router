@@ -146,6 +146,34 @@ class TransitRoute {
     return false;
   }
 
+  /// Departure times from the first stop on the Vietnam-time day of [t], in
+  /// minutes after midnight, when the mapped hours are single departures
+  /// (e.g. "Mo-Fr 07:00,17:15") rather than ranges. Null otherwise.
+  List<int>? departuresOn(DateTime t) {
+    final text = openingHours.toLowerCase();
+    if (text.trim().isEmpty || _rangeRe.hasMatch(text)) return null;
+    if (!_timeRe.hasMatch(text)) return null;
+    final today = t.toUtc().add(const Duration(hours: 7)).weekday - 1;
+    final out = <int>[];
+    for (final rule in text.split(';')) {
+      final dayMatches = _dayRe.allMatches(rule).toList();
+      var runs = dayMatches.isEmpty;
+      for (final m in dayMatches) {
+        final a = _days.indexOf(m[1]!);
+        final b = m[2] == null ? a : _days.indexOf(m[2]!);
+        for (var d = a; ; d = (d + 1) % 7) {
+          if (d == today) runs = true;
+          if (d == b) break;
+        }
+      }
+      if (!runs) continue;
+      for (final m in _timeRe.allMatches(rule)) {
+        out.add(int.parse(m[1]!) * 60 + int.parse(m[2]!));
+      }
+    }
+    return out..sort();
+  }
+
   String get label {
     if (ref.isNotEmpty) return ref;
     return mode == TransitMode.metro ? 'Metro' : '?';

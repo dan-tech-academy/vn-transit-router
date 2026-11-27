@@ -29,7 +29,8 @@ String itineraryShareText(
   var clock = departAt;
   var n = 1;
   for (final l in it.legs) {
-    final at = fmtClock(clock);
+    // A ride is listed at its boarding time, after the wait.
+    final at = fmtClock(clock.add(Duration(seconds: l.waitSeconds)));
     clock = clock.add(Duration(seconds: l.seconds + l.waitSeconds));
     if (l.kind == LegKind.walk) {
       b.writeln(
@@ -51,8 +52,8 @@ String itineraryShareText(
   }
   b.write(
     tr(
-      'Thời gian và giá vé là ước tính. Lộ Trình Việt, dữ liệu © OpenStreetMap.',
-      'Times and fares are estimates. Lộ Trình Việt, data © OpenStreetMap.',
+      'Thời gian và giá vé là ước tính. Ghee, dữ liệu © OpenStreetMap.',
+      'Times and fares are estimates. Ghee, data © OpenStreetMap.',
     ),
   );
   return b.toString();
@@ -87,6 +88,9 @@ class _ItineraryScreenState extends State<ItineraryScreen> {
   /// null: loading, true: walks follow streets, false: straight lines.
   bool? _streets = false;
 
+  /// The street walk is too long to catch a vehicle with a fixed departure.
+  bool _tooLate = false;
+
   @override
   void initState() {
     super.initState();
@@ -116,8 +120,13 @@ class _ItineraryScreenState extends State<ItineraryScreen> {
     if (!mounted) return;
     setState(() {
       // Keep the estimate unless every walk was routed.
-      _streets = !legs.contains(null);
-      if (_streets!) itinerary = Itinerary([for (final l in legs) l!]);
+      // ... and no fixed departure is missed by the longer walk.
+      final timed = legs.contains(null)
+          ? null
+          : withWalks(itinerary.legs, [for (final l in legs) l!], departAt);
+      _streets = timed != null;
+      _tooLate = timed == null && !legs.contains(null);
+      if (timed != null) itinerary = Itinerary(timed);
     });
   }
 
@@ -151,7 +160,7 @@ class _ItineraryScreenState extends State<ItineraryScreen> {
         dotMarker(l.path.first, modeColor(l.route!)),
         dotMarker(l.path.last, modeColor(l.route!)),
       ],
-      pinMarker(from.geo, const Color(0xFF0E9F6E), Icons.trip_origin),
+      pinMarker(from.geo, const Color(0xFF4D7C0F), Icons.trip_origin),
       pinMarker(to.geo, const Color(0xFFDC2626), Icons.location_on),
     ];
     return Scaffold(
@@ -235,6 +244,7 @@ class _ItineraryScreenState extends State<ItineraryScreen> {
                 ..._steps(context),
                 const SizedBox(height: 12),
                 if (_streets == false &&
+                    !_tooLate &&
                     it.legs.any((l) => l.kind == LegKind.walk && l.metres > 0))
                   Align(
                     alignment: Alignment.centerLeft,
@@ -258,6 +268,7 @@ class _ItineraryScreenState extends State<ItineraryScreen> {
                   '${switch (_streets) {
                     null => tr('Đang tải đường đi bộ theo phố...', 'Loading street walking paths...'),
                     true => tr('Đường đi bộ theo phố từ OSRM (routing.openstreetmap.de).', 'Street walking paths from OSRM (routing.openstreetmap.de).'),
+                    false when _tooLate => tr('Đi bộ theo phố lâu hơn ước tính nên có thể lỡ chuyến xe chạy theo giờ cố định; lộ trình giữ ước tính đường thẳng.', 'Walking along streets takes longer than estimated and may miss a fixed departure; the straight-line estimate is kept.'),
                     false => tr('Đường đi bộ vẽ theo đường thẳng.', 'Walking is drawn as straight lines.'),
                   }}',
                   key: const Key('walk-note'),
