@@ -181,6 +181,14 @@ void saturdayTests() {
           .where((r) => r.ref == '61-38' || r.ref == '61-73')
           .toList();
       expect(lines, hasLength(4));
+      // 61-38: Sa 06:15 and Sa 11:20; 61-73: Sa 06:17 and Sa 11:10.
+      expect(
+        {
+          for (final r in lines)
+            ...r.departuresOn(DateTime.utc(2026, 11, 27, 17))!,
+        },
+        {375, 680, 377, 670},
+      );
       var boarded = 0;
       for (final r in lines) {
         final sat = DateTime.utc(2026, 11, 27, 17); // Sat 00:00 in Vietnam
