@@ -48,6 +48,7 @@ Yêu cầu Flutter 3.47 trở lên (Dart 3.x), Android SDK hoặc Xcode.
 ```bash
 flutter pub get
 flutter run            # chạy trên máy ảo/thiết bị đang kết nối
+python3 tool/publish_data.py   # tạo dist/data, cần cho data_store_test
 flutter test           # kiểm thử bộ tìm đường trên dữ liệu thật
 flutter build apk      # bản Android
 ```
