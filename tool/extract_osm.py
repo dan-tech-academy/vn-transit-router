@@ -95,6 +95,9 @@ def enc(pts):
 def headway(t):
     v=t.get('interval') or t.get('headway')
     if not v: return None
+    # "01:00-01:10" is a range of headways, not one minute: use its middle.
+    m=re.match(r'^(\d+):(\d+)\s*-\s*(\d+):(\d+)$',v)
+    if m: return round((int(m[1])*60+int(m[2])+int(m[3])*60+int(m[4]))/2) or None
     m=re.match(r'^(\d+):(\d+)(?::\d+)?$',v)
     if m: return int(m[1])*60+int(m[2]) or None
     m=re.match(r'^(\d+)',v)
