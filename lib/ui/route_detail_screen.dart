@@ -165,7 +165,6 @@ class _RouteDetailScreenState extends State<RouteDetailScreen> {
                       ),
                     for (final v in vehicles ?? const <VehicleEstimate>[])
                       Marker(
-                        key: const Key('estimated-vehicle'),
                         point: ll(v.position),
                         width: 28,
                         height: 28,
