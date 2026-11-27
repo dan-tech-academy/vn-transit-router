@@ -305,3 +305,156 @@ const mapStatusBar = AnnotatedRegion<SystemUiOverlayStyle>(
   ),
   child: SizedBox.expand(),
 );
+
+/// The torn edge between a ticket's stub and its body.
+class Perforation extends CustomPainter {
+  final Color stub;
+  final Color paper;
+  const Perforation(this.stub, this.paper);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.drawRect(
+      Rect.fromLTWH(0, 0, size.width / 2, size.height),
+      Paint()..color = stub,
+    );
+    final hole = Paint()..color = paper;
+    for (var y = 6.0; y < size.height; y += 12) {
+      canvas.drawCircle(Offset(size.width / 2, y), 4, hole);
+    }
+  }
+
+  @override
+  bool shouldRepaint(Perforation old) => old.stub != stub || old.paper != paper;
+}
+
+/// A ticket: stub in [color] showing [icon] and [label], then [child].
+class StubCard extends StatelessWidget {
+  final Color color;
+  final IconData icon;
+  final String? label;
+  final Widget child;
+  final VoidCallback? onTap;
+  const StubCard({
+    super.key,
+    required this.color,
+    required this.icon,
+    this.label,
+    required this.child,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final paper = Theme.of(context).colorScheme.surfaceContainerLow;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Material(
+        color: paper,
+        elevation: 1,
+        borderRadius: BorderRadius.circular(20),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(
+                  width: 72,
+                  color: color,
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        icon,
+                        color: Colors.white,
+                        size: label == null ? 26 : 22,
+                      ),
+                      if (label != null) ...[
+                        const SizedBox(height: 4),
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            label!,
+                            maxLines: 1,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                CustomPaint(
+                  size: const Size(8, double.infinity),
+                  painter: Perforation(color, paper),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(8, 12, 12, 12),
+                    child: child,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Floating bar over a full-screen map.
+class MapTopBar extends StatelessWidget {
+  final Widget title;
+  final List<Widget> actions;
+  final bool back;
+  const MapTopBar({
+    super.key,
+    required this.title,
+    this.actions = const [],
+    this.back = true,
+  });
+
+  @override
+  Widget build(BuildContext context) => SafeArea(
+    child: Align(
+      alignment: Alignment.topCenter,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Material(
+          color: Theme.of(context).colorScheme.surface,
+          elevation: 4,
+          borderRadius: BorderRadius.circular(28),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 48),
+            child: Row(
+              children: [
+                if (back) const BackButton() else const SizedBox(width: 20),
+                Expanded(child: title),
+                ...actions,
+                if (actions.isEmpty) const SizedBox(width: 16),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+/// Shows [g] in the part of a full-screen map left clear by bar and sheet.
+CameraFit fitPoint(BuildContext context, Geo g, double sheet, double zoom) {
+  final h = MediaQuery.sizeOf(context).height;
+  return CameraFit.coordinates(
+    coordinates: [ll(g)],
+    minZoom: zoom,
+    maxZoom: zoom,
+    padding: fitPadding(h, MediaQuery.paddingOf(context).top + 80, h * sheet),
+  );
+}

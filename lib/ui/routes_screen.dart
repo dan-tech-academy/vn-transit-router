@@ -66,86 +66,108 @@ class _RoutesScreenState extends State<RoutesScreen> {
         )
         .toList();
     return Scaffold(
-      appBar: AppBar(title: Text(tr('Tra cứu tuyến', 'Browse routes'))),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-            child: TextField(
-              key: const Key('route-query'),
-              onChanged: (v) => setState(() => _query = v),
-              decoration: InputDecoration(
-                hintText: tr(
-                  'Số tuyến hoặc tên (vd: 19, Bến Thành)',
-                  'Line number or name (e.g. 19, Bến Thành)',
-                ),
-                prefixIcon: const Icon(Icons.search),
-                filled: true,
-                isDense: true,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(28),
-                  borderSide: BorderSide.none,
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+              child: Text(
+                tr('Tra cứu tuyến', 'Browse routes'),
+                style: t.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
                 ),
               ),
             ),
-          ),
-          SizedBox(
-            height: 44,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: cities.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 8),
-              itemBuilder: (_, i) => ChoiceChip(
-                label: Text('${cities[i]} (${_byCity[cities[i]]!.length})'),
-                selected: cities[i] == city,
-                onSelected: (_) => setState(() => _city = cities[i]),
-              ),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Expanded(
-            child: lines.isEmpty
-                ? Center(
-                    child: Text(
-                      tr('Không có tuyến phù hợp.', 'No matching routes.'),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+              child: Material(
+                color: t.colorScheme.surface,
+                elevation: 3,
+                borderRadius: BorderRadius.circular(28),
+                child: TextField(
+                  key: const Key('route-query'),
+                  onChanged: (v) => setState(() => _query = v),
+                  decoration: InputDecoration(
+                    hintText: tr(
+                      'Số tuyến hoặc tên (vd: 19, Bến Thành)',
+                      'Line number or name (e.g. 19, Bến Thành)',
                     ),
-                  )
-                : ListView.builder(
-                    itemCount: lines.length,
-                    itemBuilder: (context, i) {
-                      final l = lines[i];
-                      final r = l.first;
-                      return ListTile(
-                        leading: SizedBox(
-                          width: 84,
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            alignment: Alignment.centerLeft,
-                            child: LineBadge(r, large: true),
-                          ),
-                        ),
-                        title: Text(
-                          r.title,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        subtitle: Text(
-                          '${r.modeLabel} · ${r.stops.length} ${tr('trạm', 'stops')} · ${fmtDistance(r.dist.last)}'
-                          '${l.length > 1 ? ' · ${l.length} ${tr('chiều', 'directions')}' : ''}',
-                          style: t.textTheme.bodySmall,
-                        ),
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) =>
-                                RouteDetailScreen(route: r, directions: l),
-                          ),
-                        ),
-                      );
-                    },
+                    prefixIcon: const Icon(Icons.search),
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 14),
                   ),
-          ),
-        ],
+                ),
+              ),
+            ),
+            SizedBox(
+              height: 44,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: cities.length,
+                separatorBuilder: (_, _) => const SizedBox(width: 8),
+                itemBuilder: (_, i) => ChoiceChip(
+                  label: Text('${cities[i]} (${_byCity[cities[i]]!.length})'),
+                  selected: cities[i] == city,
+                  shape: const StadiumBorder(),
+                  onSelected: (_) => setState(() => _city = cities[i]),
+                ),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Expanded(
+              child: lines.isEmpty
+                  ? Center(
+                      child: Text(
+                        tr('Không có tuyến phù hợp.', 'No matching routes.'),
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(16, 6, 16, 16),
+                      itemCount: lines.length,
+                      itemBuilder: (context, i) {
+                        final l = lines[i];
+                        final r = l.first;
+                        return StubCard(
+                          color: modeTint(r.mode),
+                          icon: modeIcon(r.mode),
+                          label: r.label,
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  RouteDetailScreen(route: r, directions: l),
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                r.title,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: t.textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '${r.stops.length} ${tr('trạm', 'stops')} · ${fmtDistance(r.dist.last)}'
+                                '${l.length > 1 ? ' · ${l.length} ${tr('chiều', 'directions')}' : ''}',
+                                style: t.textTheme.bodySmall?.copyWith(
+                                  color: t.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }
