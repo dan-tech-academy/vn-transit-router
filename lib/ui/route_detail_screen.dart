@@ -34,6 +34,7 @@ class _RouteDetailScreenState extends State<RouteDetailScreen> {
   late TransitRoute _route = widget.route;
   late List<TransitRoute> _directions;
   final _map = MapController();
+  final _sheet = DraggableScrollableController();
   int? _selected;
   Timer? _tick;
 
@@ -53,6 +54,7 @@ class _RouteDetailScreenState extends State<RouteDetailScreen> {
   @override
   void dispose() {
     _tick?.cancel();
+    _sheet.dispose();
     super.dispose();
   }
 
@@ -219,6 +221,7 @@ class _RouteDetailScreenState extends State<RouteDetailScreen> {
           ),
           mapSheet(
             context,
+            controller: _sheet,
             initial: 0.5,
             min: 0.2,
             max: 0.85,
@@ -329,6 +332,14 @@ class _RouteDetailScreenState extends State<RouteDetailScreen> {
       onTap: () {
         setState(() => _selected = i);
         _map.fitCamera(fitPoint(context, s.geo, 0.5, 16));
+        // The fit assumes a half-height sheet.
+        if (_sheet.isAttached && _sheet.size > 0.5) {
+          _sheet.animateTo(
+            0.5,
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeOut,
+          );
+        }
       },
       child: IntrinsicHeight(
         child: Row(
