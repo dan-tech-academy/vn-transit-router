@@ -39,7 +39,7 @@ Hiện có 923 chiều tuyến và 15.176 trạm: Hà Nội, TP.HCM, Đà Nẵng
 - **Giá vé là ước tính**: lấy giá ghi trên OSM nếu có, nếu không thì đoán theo thành phố và cự ly tuyến.
 - Độ phủ và độ chính xác của tuyến/trạm phụ thuộc OSM; một số tuyến thiếu trạm.
 - Chặng đi bộ mặc định vẽ theo đường thẳng, quãng đường nhân hệ số 1,3; đường theo phố chỉ có khi tải online từ OSRM.
-- Không có vị trí xe hay giờ đến thực tế: chưa có nguồn dữ liệu mở.
+- Không có vị trí xe hay giờ đến thực tế: chưa có nguồn dữ liệu mở. Chi tiết tuyến chỉ hiện vị trí xe **ước tính** từ giờ chạy và giãn cách (tuyến có đủ hai dữ liệu này, hoặc có giờ xuất bến), giả định xe xuất bến đúng giờ và chạy đều; không tính kẹt xe hay trễ chuyến.
 
 ## Cài đặt và chạy
 

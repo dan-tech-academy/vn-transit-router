@@ -39,6 +39,13 @@ class RouterConfig {
   };
 }
 
+/// Seconds after leaving the first stop at which a vehicle leaves each stop.
+List<int> stopSeconds(TransitRoute r) => [
+  for (var i = 0; i < r.stops.length; i++)
+    (r.dist[i] / RouterConfig.speedOf(r.mode)).round() +
+        i * RouterConfig.dwellOf(r.mode),
+];
+
 enum LegKind { walk, ride }
 
 /// What to favour when ranking itineraries.
@@ -164,14 +171,7 @@ class TransitRouter {
   late final List<List<(int, int)>> _footpaths; // stop -> (stop, seconds)
 
   TransitRouter(this.data, {this.config = const RouterConfig()}) {
-    _cum = [
-      for (final r in data.routes)
-        [
-          for (var i = 0; i < r.stops.length; i++)
-            (r.dist[i] / RouterConfig.speedOf(r.mode)).round() +
-                i * RouterConfig.dwellOf(r.mode),
-        ],
-    ];
+    _cum = [for (final r in data.routes) stopSeconds(r)];
     _footpaths = [
       for (final s in data.stops)
         [
