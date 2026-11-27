@@ -23,9 +23,7 @@ void main() {
 
   setUpAll(() {
     router = TransitRouter(
-      TransitData.fromGzip(
-        File('assets/data/transit.json.gz').readAsBytesSync(),
-      ),
+      TransitData.fromGzip(File('data/transit.json.gz').readAsBytesSync()),
     );
   });
   tearDown(() => appLang = 'vi');

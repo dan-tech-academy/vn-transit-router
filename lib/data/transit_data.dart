@@ -240,9 +240,42 @@ class TransitData {
   static TransitData fromGzip(Uint8List bytes) =>
       fromJson(utf8.decode(gzip.decode(bytes)));
 
+  /// Joins per-city files, each with its own stop list. Every stop carries
+  /// its place in the full list, so a stop served from two cities is merged
+  /// back into one and stops keep the order of the full list.
+  static TransitData fromParts(String generated, List<Uint8List> parts) {
+    final byOrder = <int, List>{};
+    final routes = <Map<String, dynamic>>[];
+    final pending = <(Map<String, dynamic>, List<int>)>[];
+    for (final part in parts) {
+      final j = jsonDecode(utf8.decode(gzip.decode(part))) as Map;
+      final local = [
+        for (final s in j['stops'] as List)
+          (byOrder[s[3] as int] ??= s as List)[3] as int,
+      ];
+      for (final r in (j['routes'] as List).cast<Map<String, dynamic>>()) {
+        pending.add((r, [for (final s in r['stops'] as List) local[s as int]]));
+        routes.add(r);
+      }
+    }
+    final order = byOrder.keys.toList()..sort();
+    final index = {for (var i = 0; i < order.length; i++) order[i]: i};
+    for (final (r, stops) in pending) {
+      r['stops'] = [for (final s in stops) index[s]!];
+    }
+    return _build(generated, [for (final o in order) byOrder[o]!], routes);
+  }
+
   static TransitData fromJson(String text) {
     final j = jsonDecode(text) as Map<String, dynamic>;
-    final rawStops = j['stops'] as List;
+    return _build(
+      j['generated'] as String? ?? '',
+      j['stops'] as List,
+      j['routes'] as List,
+    );
+  }
+
+  static TransitData _build(String generated, List rawStops, List rawRoutes) {
     final stops = <Stop>[
       for (var i = 0; i < rawStops.length; i++)
         Stop(
@@ -252,7 +285,6 @@ class TransitData {
           rawStops[i][2] as String,
         ),
     ];
-    final rawRoutes = j['routes'] as List;
     final routes = <TransitRoute>[];
     for (var i = 0; i < rawRoutes.length; i++) {
       final r = rawRoutes[i] as Map<String, dynamic>;
@@ -284,7 +316,7 @@ class TransitData {
         if (list.isEmpty || list.last != i) list.add(i);
       }
     }
-    return TransitData(j['generated'] as String? ?? '', stops, routes);
+    return TransitData(generated, stops, routes);
   }
 
   /// Stops within [radius] metres, nearest first.

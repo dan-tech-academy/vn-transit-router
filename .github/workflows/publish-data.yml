@@ -1,0 +1,20 @@
+name: Publish route data
+
+# Uploads data/transit.json.gz, split per city, to the R2 bucket the app
+# downloads from. Needs the CLOUDFLARE_API_TOKEN (R2 write) and
+# CLOUDFLARE_ACCOUNT_ID repository secrets.
+on:
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: python3 tool/publish_data.py --upload
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

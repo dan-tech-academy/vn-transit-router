@@ -2,11 +2,11 @@ import 'dart:convert';
 import 'dart:isolate';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'data/data_store.dart';
 import 'data/geo.dart';
 import 'data/transit_data.dart';
 import 'l10n.dart';
@@ -78,14 +78,6 @@ class AppState extends ChangeNotifier {
 
   Future<void> load() async {
     try {
-      final bytes = (await rootBundle.load('assets/data/transit.json.gz'))
-          .buffer
-          .asUint8List();
-      final r = await Isolate.run(
-        () => TransitRouter(TransitData.fromGzip(bytes)),
-      );
-      router = r;
-      data = r.data;
       final prefs = _prefs = await SharedPreferences.getInstance();
       List<Place> places(String key) => [
         for (final s in prefs.getStringList(key) ?? const <String>[])
@@ -98,9 +90,6 @@ class AppState extends ChangeNotifier {
             : Place.fromJson(jsonDecode(s) as Map<String, dynamic>);
       }
 
-      try {
-        tileCacheDir = '${(await getApplicationSupportDirectory()).path}/tiles';
-      } catch (_) {}
       recent = places('recent');
       saved = places('saved');
       home = place('home');
@@ -112,10 +101,37 @@ class AppState extends ChangeNotifier {
       preference = RoutePreference.values[prefs.getInt('pref') ?? 0];
       metroOnly = prefs.getBool('metroOnly') ?? false;
       streetWalking = prefs.getBool('streetWalking') ?? false;
+      notifyListeners();
+
+      final support = (await getApplicationSupportDirectory()).path;
+      tileCacheDir = '$support/tiles';
+      final store = DataStore('$support/transit');
+      var bundle = await store.cached();
+      if (bundle == null) {
+        await store.update();
+        bundle = await store.cached();
+        if (bundle == null) throw StateError('Route data is incomplete');
+      } else {
+        // Newer data is used from the next launch, so routes and stops do
+        // not change under a search in progress.
+        store.update().catchError((_) => false);
+      }
+      final b = bundle;
+      final r = await Isolate.run(
+        () => TransitRouter(TransitData.fromParts(b.generated, b.parts)),
+      );
+      router = r;
+      data = r.data;
     } catch (e) {
       loadError = e;
     }
     notifyListeners();
+  }
+
+  void retryLoad() {
+    loadError = null;
+    notifyListeners();
+    load();
   }
 
   Future<void> remember(Place p) async {

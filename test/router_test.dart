@@ -10,9 +10,7 @@ void main() {
   late TransitRouter router;
 
   setUpAll(() {
-    data = TransitData.fromGzip(
-      File('assets/data/transit.json.gz').readAsBytesSync(),
-    );
+    data = TransitData.fromGzip(File('data/transit.json.gz').readAsBytesSync());
     router = TransitRouter(data);
   });
 

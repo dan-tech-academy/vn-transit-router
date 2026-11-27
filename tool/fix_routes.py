@@ -58,7 +58,7 @@ def order(ids, P, first, last):
             if improved: break
     return path
 
-path = 'assets/data/transit.json.gz'
+path = 'data/transit.json.gz'
 data = json.load(gzip.open(path))
 fixes = json.load(open('tool/route_fixes.json'))
 stops = data['stops']
