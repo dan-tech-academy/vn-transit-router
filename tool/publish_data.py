@@ -24,31 +24,39 @@ def slug(name):
 def build():
     raw = open(SRC, 'rb').read()
     d = json.loads(gzip.decompress(raw))
-    version = d['generated'].replace('-', '') + '-' + hashlib.sha256(raw).hexdigest()[:8]
     cities = {}
     for r in d['routes']:
         cities.setdefault(r['city'], []).append(r)
-    os.makedirs(f'{OUT}/v/{version}', exist_ok=True)
-    files = []
+    blobs = []
     for city, routes in cities.items():
-        local, stops, out = {}, [], []
+        local, out = {}, []
         for r in routes:
             r = dict(r)
             r['stops'] = [local.setdefault(s, len(local)) for s in r['stops']]
             out.append(r)
-        stops = [d['stops'][s] for s in local]
+        # The fourth value is the stop's place in the full list: the app
+        # uses it to merge stops shared between cities and to keep the order.
+        stops = [d['stops'][s] + [s] for s in local]
         body = json.dumps(
             {'city': city, 'stops': stops, 'routes': out},
             ensure_ascii=False, separators=(',', ':'),
         ).encode()
         blob = gzip.compress(body, 9, mtime=0)
-        path = f'v/{version}/{slug(city)}.json.gz'
-        open(f'{OUT}/{path}', 'wb').write(blob)
-        files.append({
-            'city': city, 'path': path, 'bytes': len(blob),
+        blobs.append((blob, {
+            'city': city, 'path': f'{slug(city)}.json.gz', 'bytes': len(blob),
             'sha256': hashlib.sha256(blob).hexdigest(),
             'routes': len(out), 'stops': len(stops),
-        })
+        }))
+    # The version names the bytes that are served, so a path never gets
+    # different content, whatever gzip produced it.
+    digest = hashlib.sha256(''.join(f['sha256'] for _, f in blobs).encode())
+    version = d['generated'].replace('-', '') + '-' + digest.hexdigest()[:8]
+    os.makedirs(f'{OUT}/v/{version}', exist_ok=True)
+    files = []
+    for blob, f in blobs:
+        f['path'] = f'v/{version}/{f["path"]}'
+        open(f'{OUT}/{f["path"]}', 'wb').write(blob)
+        files.append(f)
     manifest = {
         'format': 1, 'version': version, 'generated': d['generated'],
         'source': d['source'], 'files': files,
