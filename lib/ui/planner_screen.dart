@@ -827,7 +827,7 @@ class ItineraryCard extends StatelessWidget {
               ),
               CustomPaint(
                 size: const Size(8, double.infinity),
-                painter: _Perforation(stub, paper),
+                painter: Perforation(stub, paper),
               ),
               Expanded(
                 child: Padding(
@@ -914,26 +914,4 @@ class ItineraryCard extends StatelessWidget {
       ),
     );
   }
-}
-
-class _Perforation extends CustomPainter {
-  final Color stub;
-  final Color paper;
-  const _Perforation(this.stub, this.paper);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    canvas.drawRect(
-      Rect.fromLTWH(0, 0, size.width / 2, size.height),
-      Paint()..color = stub,
-    );
-    final hole = Paint()..color = paper;
-    for (var y = 6.0; y < size.height; y += 12) {
-      canvas.drawCircle(Offset(size.width / 2, y), 4, hole);
-    }
-  }
-
-  @override
-  bool shouldRepaint(_Perforation old) =>
-      old.stub != stub || old.paper != paper;
 }
