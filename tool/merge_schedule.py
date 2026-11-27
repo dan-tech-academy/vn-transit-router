@@ -1,5 +1,5 @@
 """Merge operating hours and headway from tool/hcm_schedule.json
-(parsed from xe-buyt.com route pages) into assets/data/transit.json.gz.
+(parsed from xe-buyt.com route pages) into data/transit.json.gz.
 
 Only TP. Hồ Chí Minh bus routes are matched, by route number. and only when both
 endpoints named on the page are the termini of the OpenStreetMap route. A value
@@ -29,7 +29,7 @@ def same_line(sched_name, r):
            (same_place(a, r['to']) and same_place(b, r['from']))
 
 sched = json.load(open(sys.argv[1] if len(sys.argv) > 1 else 'tool/hcm_schedule.json'))
-path = 'assets/data/transit.json.gz'
+path = 'data/transit.json.gz'
 d = json.load(gzip.open(path))
 n = 0
 for r in d['routes']:

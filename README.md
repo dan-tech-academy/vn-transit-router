@@ -20,7 +20,7 @@
 - **Yêu thích**: nhà, cơ quan, địa điểm và lộ trình đã lưu.
 - **Chi tiết trạm**: các tuyến đi qua trạm, tìm đường từ/đến trạm.
 - **Chia sẻ lộ trình**, giao diện sáng/tối, tiếng Việt/tiếng Anh.
-- Tìm đường chạy hoàn toàn trên máy với dữ liệu đóng gói sẵn. Cần mạng: ô bản đồ (vùng đã xem được lưu lại để xem offline), tìm địa danh, và đường đi bộ theo phố nếu người dùng chọn tải.
+- Tìm đường chạy hoàn toàn trên máy. Dữ liệu tuyến không nằm trong app: lần đầu mở app tải về từ `https://ghee-data.dantech.app` (khoảng 0,9 MB) và lưu lại, các lần sau dùng bản đã lưu và kiểm tra bản mới ở nền (áp dụng từ lần mở kế tiếp). Cũng cần mạng: ô bản đồ (vùng đã xem được lưu lại để xem offline), tìm địa danh, và đường đi bộ theo phố nếu người dùng chọn tải.
 
 ## Dữ liệu
 
@@ -48,6 +48,7 @@ Yêu cầu Flutter 3.47 trở lên (Dart 3.x), Android SDK hoặc Xcode.
 ```bash
 flutter pub get
 flutter run            # chạy trên máy ảo/thiết bị đang kết nối
+python3 tool/publish_data.py   # tạo dist/data, cần cho data_store_test
 flutter test           # kiểm thử bộ tìm đường trên dữ liệu thật
 flutter build apk      # bản Android
 ```
@@ -61,7 +62,7 @@ lib/
   services/   geocoder.dart (Nominatim)
   ui/         planner, place_search, map_pick, itinerary, routes, route_detail, nearby
   app_state.dart   nạp dữ liệu trong isolate, vị trí, địa điểm gần đây
-assets/data/transit.json.gz   dữ liệu tuyến/trạm đã nén
+data/transit.json.gz          dữ liệu tuyến/trạm gốc (không đóng gói vào app)
 tool/         script tạo dữ liệu
 ```
 
@@ -73,10 +74,19 @@ Thư viện chính: `flutter_map`, `latlong2`, `geolocator`, `provider`, `shared
 pip install osmium
 curl -L -o vietnam.osm.pbf https://download.geofabrik.de/asia/vietnam-latest.osm.pbf
 python3 tool/extract_osm.py $(date +%F) # tạo transit.json.gz từ OSM
-mv transit.json.gz assets/data/ && rm transit.json
+mv transit.json.gz data/ && rm transit.json
 python3 tool/merge_schedule.py         # bổ sung giờ chạy từ tool/hcm_schedule.json
 python3 tool/fix_routes.py             # sửa riêng từng tuyến theo tool/route_fixes.json
 ```
+
+Đẩy dữ liệu lên server (bucket R2 `ghee-transit-data`, phục vụ tại `https://ghee-data.dantech.app`):
+
+```bash
+python3 tool/publish_data.py            # tách theo tỉnh/thành vào dist/data/, kèm manifest.json
+python3 tool/publish_data.py --upload   # đẩy lên R2 bằng wrangler
+```
+
+Cần `CLOUDFLARE_API_TOKEN` (quyền ghi R2) và `CLOUDFLARE_ACCOUNT_ID`; hoặc chạy workflow "Publish route data" sau khi thêm hai secret đó vào repo. Mỗi tỉnh/thành là một file ở `v/<phiên bản>/`, `manifest.json` ghi phiên bản, kích thước và SHA-256 của từng file và được đẩy lên sau cùng. App bỏ file sai mã kiểm tra và giữ bản đang có. Build với `--dart-define=GHEE_DATA_URL=...` để trỏ app sang server khác.
 
 `tool/parse_xebuyt.py` tạo `hcm_schedule.json` từ các trang tuyến đã lưu của xe-buyt.com.
 
