@@ -202,27 +202,30 @@ class TransitData {
   static TransitData fromGzip(Uint8List bytes) =>
       fromJson(utf8.decode(gzip.decode(bytes)));
 
-  /// Joins per-city files, each with its own stop list. A stop served from
-  /// two cities appears in both files and is merged back into one.
+  /// Joins per-city files, each with its own stop list. Every stop carries
+  /// its place in the full list, so a stop served from two cities is merged
+  /// back into one and stops keep the order of the full list.
   static TransitData fromParts(String generated, List<Uint8List> parts) {
-    final stops = <List>[];
-    final seen = <String, int>{};
+    final byOrder = <int, List>{};
     final routes = <Map<String, dynamic>>[];
+    final pending = <(Map<String, dynamic>, List<int>)>[];
     for (final part in parts) {
       final j = jsonDecode(utf8.decode(gzip.decode(part))) as Map;
       final local = [
         for (final s in j['stops'] as List)
-          seen.putIfAbsent('${s[0]},${s[1]},${s[2]}', () {
-            stops.add(s as List);
-            return stops.length - 1;
-          }),
+          (byOrder[s[3] as int] ??= s as List)[3] as int,
       ];
       for (final r in (j['routes'] as List).cast<Map<String, dynamic>>()) {
-        r['stops'] = [for (final s in r['stops'] as List) local[s as int]];
+        pending.add((r, [for (final s in r['stops'] as List) local[s as int]]));
         routes.add(r);
       }
     }
-    return _build(generated, stops, routes);
+    final order = byOrder.keys.toList()..sort();
+    final index = {for (var i = 0; i < order.length; i++) order[i]: i};
+    for (final (r, stops) in pending) {
+      r['stops'] = [for (final s in stops) index[s]!];
+    }
+    return _build(generated, [for (final o in order) byOrder[o]!], routes);
   }
 
   static TransitData fromJson(String text) {
