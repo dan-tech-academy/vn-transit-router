@@ -35,6 +35,7 @@ Map<String, dynamic> _route(
 
 void main() {
   tearDown(() => appLang = 'vi');
+  saturdayTests();
 
   test('less walking keeps a slower line that stops at the door', () {
     // Line S stops at both ends but runs hourly; line F is frequent and
@@ -161,5 +162,70 @@ void main() {
       trStopSubtitle('Stop · Hà Nội · lines 01'),
       'Trạm · Hà Nội · tuyến 01',
     );
+  });
+}
+
+void saturdayTests() {
+  group('Saturday departures on lines with weekday ranges', () {
+    late TransitData data;
+    late TransitRouter router;
+    setUpAll(() {
+      data = TransitData.fromGzip(
+        File('data/transit.json.gz').readAsBytesSync(),
+      );
+      router = TransitRouter(data);
+    });
+
+    test('61-38 and 61-73 are boarded at their Saturday departure', () {
+      final lines = data.routes
+          .where((r) => r.ref == '61-38' || r.ref == '61-73')
+          .toList();
+      expect(lines, hasLength(4));
+      // 61-38: Sa 06:15 and Sa 11:20; 61-73: Sa 06:17 and Sa 11:10.
+      expect(
+        {
+          for (final r in lines)
+            ...r.departuresOn(DateTime.utc(2026, 11, 27, 17))!,
+        },
+        {375, 680, 377, 670},
+      );
+      var boarded = 0;
+      for (final r in lines) {
+        final sat = DateTime.utc(2026, 11, 27, 17); // Sat 00:00 in Vietnam
+        final dep = r.departuresOn(sat)!.single;
+        expect(r.departuresOn(sat.subtract(const Duration(days: 1))), isNull);
+        expect(r.departuresOn(sat.add(const Duration(days: 1))), isEmpty);
+        const from = 3;
+        final to = r.stops.length - 3;
+        Iterable<(Itinerary, Leg)> rides(int minutesBefore) sync* {
+          final its = router.plan(
+            data.stops[r.stops[from]].geo,
+            data.stops[r.stops[to]].geo,
+            departAt: sat.add(Duration(minutes: dep - minutesBefore)),
+          );
+          for (final it in its) {
+            for (final l in it.rides) {
+              if (l.route!.index == r.index) yield (it, l);
+            }
+          }
+        }
+
+        final found = rides(20).toList();
+        // Other lines can beat this one, so it need not appear every time.
+        boarded += found.length;
+        for (final (it, leg) in found) {
+          var t = 0;
+          for (final l in it.legs) {
+            t += l.waitSeconds;
+            if (identical(l, leg)) break;
+            t += l.seconds;
+          }
+          expect(t, 20 * 60 + stopSeconds(r)[leg.fromPos]);
+        }
+        // Once the only vehicle has passed, the line is not offered.
+        expect(rides(-120), isEmpty, reason: '${r.ref} ${r.name}');
+      }
+      expect(boarded, greaterThan(0));
+    });
   });
 }

@@ -147,16 +147,17 @@ class TransitRoute {
   }
 
   /// Departure times from the first stop on the Vietnam-time day of [t], in
-  /// minutes after midnight, when the mapped hours are single departures
-  /// (e.g. "Mo-Fr 07:00,17:15") rather than ranges. Null otherwise.
+  /// minutes after midnight, when the rules for that day are single departures
+  /// (e.g. "Mo-Fr 06:00-20:00; Sa 07:00,17:15" on a Saturday) rather than
+  /// ranges. Null otherwise.
   List<int>? departuresOn(DateTime t) {
     final text = openingHours.toLowerCase();
-    if (text.trim().isEmpty || _rangeRe.hasMatch(text)) return null;
-    if (!_timeRe.hasMatch(text)) return null;
+    if (!_timeRe.hasMatch(text.replaceAll(_rangeRe, ''))) return null;
     final today = t.toUtc().add(const Duration(hours: 7)).weekday - 1;
     final out = <int>[];
     for (final rule in text.split(';')) {
       if (!_runsOn(rule, today)) continue;
+      if (_rangeRe.hasMatch(rule)) return null;
       for (final m in _timeRe.allMatches(rule)) {
         out.add(int.parse(m[1]!) * 60 + int.parse(m[2]!));
       }
