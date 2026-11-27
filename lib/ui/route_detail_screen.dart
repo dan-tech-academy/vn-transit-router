@@ -88,7 +88,7 @@ class _RouteDetailScreenState extends State<RouteDetailScreen> {
     _map.fitCamera(
       CameraFit.bounds(
         bounds: LatLngBounds.fromPoints(_route.shape.map(ll).toList()),
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.fromLTRB(32, 32, 32, 56),
       ),
     );
   }
@@ -136,7 +136,7 @@ class _RouteDetailScreenState extends State<RouteDetailScreen> {
               options: MapOptions(
                 initialCameraFit: CameraFit.bounds(
                   bounds: LatLngBounds.fromPoints(shape),
-                  padding: const EdgeInsets.all(32),
+                  padding: const EdgeInsets.fromLTRB(32, 32, 32, 56),
                 ),
                 interactionOptions: const InteractionOptions(
                   flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
