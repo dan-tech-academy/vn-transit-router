@@ -306,6 +306,18 @@ const mapStatusBar = AnnotatedRegion<SystemUiOverlayStyle>(
   child: SizedBox.expand(),
 );
 
+/// Status icons that contrast with the page background, for screens without
+/// an app bar.
+Widget pageStatusBar(BuildContext context, Widget child) =>
+    AnnotatedRegion<SystemUiOverlayStyle>(
+      value:
+          (Theme.of(context).brightness == Brightness.dark
+                  ? SystemUiOverlayStyle.light
+                  : SystemUiOverlayStyle.dark)
+              .copyWith(statusBarColor: Colors.transparent),
+      child: child,
+    );
+
 /// The torn edge between a ticket's stub and its body.
 class Perforation extends CustomPainter {
   final Color stub;
