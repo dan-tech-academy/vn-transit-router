@@ -103,7 +103,10 @@ class _PlannerScreenState extends State<PlannerScreen> {
       final h = _map.camera.nonRotatedSize.height;
       final top = MediaQuery.paddingOf(context).top + 250;
       // On short screens the sheet drops lower to leave the trip some map.
-      final sheet = ((h - top - 140) / h).clamp(_sheetMin, _sheetSize);
+      // With no trip to show the sheet stays up so its message is seen.
+      final sheet = shown.isEmpty
+          ? _sheetSize
+          : ((h - top - 140) / h).clamp(_sheetMin, _sheetSize);
       if (_sheet.isAttached) {
         _sheet.reset();
         if (sheet < _sheetSize) {
