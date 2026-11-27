@@ -202,9 +202,39 @@ class TransitData {
   static TransitData fromGzip(Uint8List bytes) =>
       fromJson(utf8.decode(gzip.decode(bytes)));
 
+  /// Joins per-city files, each with its own stop list. A stop served from
+  /// two cities appears in both files and is merged back into one.
+  static TransitData fromParts(String generated, List<Uint8List> parts) {
+    final stops = <List>[];
+    final seen = <String, int>{};
+    final routes = <Map<String, dynamic>>[];
+    for (final part in parts) {
+      final j = jsonDecode(utf8.decode(gzip.decode(part))) as Map;
+      final local = [
+        for (final s in j['stops'] as List)
+          seen.putIfAbsent('${s[0]},${s[1]},${s[2]}', () {
+            stops.add(s as List);
+            return stops.length - 1;
+          }),
+      ];
+      for (final r in (j['routes'] as List).cast<Map<String, dynamic>>()) {
+        r['stops'] = [for (final s in r['stops'] as List) local[s as int]];
+        routes.add(r);
+      }
+    }
+    return _build(generated, stops, routes);
+  }
+
   static TransitData fromJson(String text) {
     final j = jsonDecode(text) as Map<String, dynamic>;
-    final rawStops = j['stops'] as List;
+    return _build(
+      j['generated'] as String? ?? '',
+      j['stops'] as List,
+      j['routes'] as List,
+    );
+  }
+
+  static TransitData _build(String generated, List rawStops, List rawRoutes) {
     final stops = <Stop>[
       for (var i = 0; i < rawStops.length; i++)
         Stop(
@@ -214,7 +244,6 @@ class TransitData {
           rawStops[i][2] as String,
         ),
     ];
-    final rawRoutes = j['routes'] as List;
     final routes = <TransitRoute>[];
     for (var i = 0; i < rawRoutes.length; i++) {
       final r = rawRoutes[i] as Map<String, dynamic>;
@@ -246,7 +275,7 @@ class TransitData {
         if (list.isEmpty || list.last != i) list.add(i);
       }
     }
-    return TransitData(j['generated'] as String? ?? '', stops, routes);
+    return TransitData(generated, stops, routes);
   }
 
   /// Stops within [radius] metres, nearest first.

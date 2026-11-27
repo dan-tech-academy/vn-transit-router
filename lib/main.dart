@@ -76,8 +76,31 @@ class _HomeShellState extends State<HomeShell> {
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
-            child: Text(
-              '${tr('Không tải được dữ liệu tuyến', 'Could not load route data')}: ${app.loadError}',
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.cloud_off, size: 48),
+                const SizedBox(height: 16),
+                Text(
+                  tr(
+                    'Không tải được dữ liệu tuyến. Lần đầu mở app cần có mạng để tải dữ liệu.',
+                    'Could not download route data. The app needs a connection the first time it opens.',
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '${app.loadError}',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 16),
+                FilledButton.icon(
+                  onPressed: app.retryLoad,
+                  icon: const Icon(Icons.refresh),
+                  label: Text(tr('Thử lại', 'Try again')),
+                ),
+              ],
             ),
           ),
         ),
