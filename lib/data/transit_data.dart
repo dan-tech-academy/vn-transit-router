@@ -156,22 +156,53 @@ class TransitRoute {
     final today = t.toUtc().add(const Duration(hours: 7)).weekday - 1;
     final out = <int>[];
     for (final rule in text.split(';')) {
-      final dayMatches = _dayRe.allMatches(rule).toList();
-      var runs = dayMatches.isEmpty;
-      for (final m in dayMatches) {
-        final a = _days.indexOf(m[1]!);
-        final b = m[2] == null ? a : _days.indexOf(m[2]!);
-        for (var d = a; ; d = (d + 1) % 7) {
-          if (d == today) runs = true;
-          if (d == b) break;
-        }
-      }
-      if (!runs) continue;
+      if (!_runsOn(rule, today)) continue;
       for (final m in _timeRe.allMatches(rule)) {
         out.add(int.parse(m[1]!) * 60 + int.parse(m[2]!));
       }
     }
     return out..sort();
+  }
+
+  static bool _runsOn(String rule, int day) {
+    final dayMatches = _dayRe.allMatches(rule).toList();
+    if (dayMatches.isEmpty) return true;
+    for (final m in dayMatches) {
+      final a = _days.indexOf(m[1]!);
+      final b = m[2] == null ? a : _days.indexOf(m[2]!);
+      for (var d = a; ; d = (d + 1) % 7) {
+        if (d == day) return true;
+        if (d == b) break;
+      }
+    }
+    return false;
+  }
+
+  /// When vehicles leave the first stop on the Vietnam-time day of [t], in
+  /// minutes after that day's midnight (past 1440 for hours that run over
+  /// midnight): the mapped departures, or one every [headwayMin] through the
+  /// mapped hours. Null when the data has neither.
+  List<int>? scheduleOn(DateTime t) {
+    final fixed = departuresOn(t);
+    if (fixed != null) return fixed;
+    final every = headwayMin;
+    if (every == null) return null;
+    final today = t.toUtc().add(const Duration(hours: 7)).weekday - 1;
+    final ranges = _rangeRe.allMatches(openingHours).toList();
+    if (ranges.isEmpty) return null;
+    final out = <int>{};
+    for (final rule in openingHours.toLowerCase().split(';')) {
+      if (!_runsOn(rule, today)) continue;
+      for (final m in _rangeRe.allMatches(rule)) {
+        final open = int.parse(m[1]!) * 60 + int.parse(m[2]!);
+        var close = int.parse(m[3]!) * 60 + int.parse(m[4]!);
+        if (close <= open) close += 1440;
+        for (var d = open; d <= close; d += every) {
+          out.add(d);
+        }
+      }
+    }
+    return out.toList()..sort();
   }
 
   String get label {

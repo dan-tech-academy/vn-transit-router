@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:provider/provider.dart';
@@ -6,6 +8,7 @@ import '../app_state.dart';
 import '../data/transit_data.dart';
 import '../l10n.dart';
 import '../routing/router.dart' as routing;
+import '../routing/vehicles.dart';
 import 'common.dart';
 import 'stop_detail_screen.dart';
 
@@ -32,14 +35,48 @@ class _RouteDetailScreenState extends State<RouteDetailScreen> {
   late List<TransitRoute> _directions;
   final _map = MapController();
   int? _selected;
+  Timer? _tick;
 
   @override
   void initState() {
     super.initState();
+    // Estimated vehicles move with the clock.
+    _tick = Timer.periodic(const Duration(seconds: 15), (_) {
+      if (mounted) setState(() {});
+    });
     final data = context.read<AppState>().data!;
     _directions =
         widget.directions ??
         data.routes.where((r) => r.lineKey == widget.route.lineKey).toList();
+  }
+
+  @override
+  void dispose() {
+    _tick?.cancel();
+    super.dispose();
+  }
+
+  String _vehiclesLine(List<VehicleEstimate> vehicles, DateTime now) {
+    if (vehicles.isNotEmpty) {
+      final n = vehicles.length;
+      return tr(
+        '$n xe đang chạy · vị trí ước tính theo lịch, không phải GPS',
+        '$n ${n == 1 ? 'vehicle' : 'vehicles'} running · positions estimated from the schedule, not GPS',
+      );
+    }
+    final next = nextDeparture(_route, now);
+    if (next == null) {
+      return tr(
+        'Theo lịch, hiện không có xe đang chạy',
+        'No vehicle is running now, by the schedule',
+      );
+    }
+    final at =
+        '${(next ~/ 60).toString().padLeft(2, '0')}:${(next % 60).toString().padLeft(2, '0')}';
+    return tr(
+      'Theo lịch, chuyến kế xuất bến lúc $at',
+      'By the schedule, the next one leaves at $at',
+    );
   }
 
   void _switchDirection() {
@@ -63,6 +100,12 @@ class _RouteDetailScreenState extends State<RouteDetailScreen> {
     final r = _route;
     final color = modeColor(r);
     final shape = r.shape.map(ll).toList();
+    final now = DateTime.now();
+    final vehicles = estimateVehicles(r, now);
+    final arriving = <int, int>{
+      for (final v in vehicles ?? const <VehicleEstimate>[])
+        v.nextStop: v.secondsToNext,
+    };
     final headway =
         r.headwayMin ?? routing.RouterConfig.defaultHeadwayMin(r.mode);
     return Scaffold(
@@ -120,6 +163,28 @@ class _RouteDetailScreenState extends State<RouteDetailScreen> {
                         color,
                         size: i == _selected ? 18 : 9,
                       ),
+                    for (final v in vehicles ?? const <VehicleEstimate>[])
+                      Marker(
+                        key: const Key('estimated-vehicle'),
+                        point: ll(v.position),
+                        width: 28,
+                        height: 28,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: color,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                            boxShadow: const [
+                              BoxShadow(color: Colors.black38, blurRadius: 3),
+                            ],
+                          ),
+                          child: Icon(
+                            modeIcon(r.mode),
+                            size: 16,
+                            color: onColor(color),
+                          ),
+                        ),
+                      ),
                   ],
                 ),
                 const OsmAttribution(),
@@ -160,6 +225,22 @@ class _RouteDetailScreenState extends State<RouteDetailScreen> {
                     color: t.colorScheme.onSurfaceVariant,
                   ),
                 ),
+                if (vehicles != null) ...[
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Icon(modeIcon(r.mode), size: 16, color: color),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          _vehiclesLine(vehicles, now),
+                          key: const Key('estimated-vehicles'),
+                          style: t.textTheme.bodySmall,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
@@ -177,6 +258,7 @@ class _RouteDetailScreenState extends State<RouteDetailScreen> {
                       data.routes[ri].label,
                 }.take(8).join(', ');
                 final end = i == 0 || i == r.stops.length - 1;
+                final due = arriving[i];
                 return ListTile(
                   dense: true,
                   selected: i == _selected,
@@ -191,9 +273,24 @@ class _RouteDetailScreenState extends State<RouteDetailScreen> {
                       fontWeight: end ? FontWeight.w700 : FontWeight.w500,
                     ),
                   ),
-                  subtitle: others.isEmpty
+                  subtitle: others.isEmpty && due == null
                       ? null
-                      : Text('${tr('Chuyển tuyến', 'Transfer')}: $others'),
+                      : Text(
+                          [
+                            if (due != null)
+                              due < 60
+                                  ? tr(
+                                      'Xe sắp tới (ước tính)',
+                                      'Vehicle due now (estimate)',
+                                    )
+                                  : tr(
+                                      'Xe tới sau ~${(due / 60).round()} phút (ước tính)',
+                                      'Vehicle in ~${(due / 60).round()} min (estimate)',
+                                    ),
+                            if (others.isNotEmpty)
+                              '${tr('Chuyển tuyến', 'Transfer')}: $others',
+                          ].join('\n'),
+                        ),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [

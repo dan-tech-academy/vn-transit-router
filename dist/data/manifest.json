@@ -1,0 +1,152 @@
+{
+ "format": 1,
+ "version": "20261125-6e4c05ce",
+ "generated": "2026-11-25",
+ "source": "OpenStreetMap contributors (ODbL), Geofabrik Vietnam extract; xe-buyt.com (giờ chạy, giãn cách tuyến TP.HCM)",
+ "files": [
+  {
+   "city": "Đà Nẵng",
+   "path": "v/20261125-6e4c05ce/da-nang.json.gz",
+   "bytes": 44481,
+   "sha256": "915c6bea4929b8e3185103339901146a7689bbffce8ccf6ed79b3fa14d6e80c2",
+   "routes": 47,
+   "stops": 815
+  },
+  {
+   "city": "Hà Nội",
+   "path": "v/20261125-6e4c05ce/ha-noi.json.gz",
+   "bytes": 372923,
+   "sha256": "935d2983a5d2a3d54f4dc6ab80082fc175be1d0fdaff7c933c2c2468614a507c",
+   "routes": 373,
+   "stops": 5089
+  },
+  {
+   "city": "TP. Hồ Chí Minh",
+   "path": "v/20261125-6e4c05ce/tp-ho-chi-minh.json.gz",
+   "bytes": 349547,
+   "sha256": "f82814843907d2ea0b1693ce7e034362df9a0092a5ab53d9181b7f87cd554e30",
+   "routes": 323,
+   "stops": 6184
+  },
+  {
+   "city": "Khác",
+   "path": "v/20261125-6e4c05ce/khac.json.gz",
+   "bytes": 4814,
+   "sha256": "184f0a77d166c0e746b04cbe78b02353c19dc812a2115f31d66ba50eb46c7629",
+   "routes": 6,
+   "stops": 82
+  },
+  {
+   "city": "Biên Hòa - Đồng Nai",
+   "path": "v/20261125-6e4c05ce/bien-hoa-dong-nai.json.gz",
+   "bytes": 38361,
+   "sha256": "f28c033c9b4368383634c4ed278514b84446ddbf86cb54b5e606920609b46ec5",
+   "routes": 20,
+   "stops": 864
+  },
+  {
+   "city": "Nha Trang",
+   "path": "v/20261125-6e4c05ce/nha-trang.json.gz",
+   "bytes": 4835,
+   "sha256": "f42e3589df95470d27489d5e39f5788938d8918ab81ffe8b60af0d1b409d5e49",
+   "routes": 6,
+   "stops": 87
+  },
+  {
+   "city": "Cần Thơ",
+   "path": "v/20261125-6e4c05ce/can-tho.json.gz",
+   "bytes": 41844,
+   "sha256": "8ee9db737e472bc03a2f12f809ee8dde8d84aefce834ceb2349997452756a2a1",
+   "routes": 17,
+   "stops": 1195
+  },
+  {
+   "city": "Long Xuyên - An Giang",
+   "path": "v/20261125-6e4c05ce/long-xuyen-an-giang.json.gz",
+   "bytes": 5974,
+   "sha256": "f103a3995f59ace7c96ecc11e5720aa483c313a88c3e92547ee8ee8c00a3b263",
+   "routes": 25,
+   "stops": 17
+  },
+  {
+   "city": "Phú Quốc",
+   "path": "v/20261125-6e4c05ce/phu-quoc.json.gz",
+   "bytes": 5228,
+   "sha256": "d352d423350f9f65a235746381cdcac1891c6aefc3ed294e111ca9eec92e87fa",
+   "routes": 7,
+   "stops": 92
+  },
+  {
+   "city": "Bắc Ninh",
+   "path": "v/20261125-6e4c05ce/bac-ninh.json.gz",
+   "bytes": 27176,
+   "sha256": "aa9a228aaa1f01a390a6a9a98f94cdf050217f98936cff4cbbef2a95e083006d",
+   "routes": 24,
+   "stops": 467
+  },
+  {
+   "city": "Móng Cái",
+   "path": "v/20261125-6e4c05ce/mong-cai.json.gz",
+   "bytes": 733,
+   "sha256": "f9f4256da55cf1b9a3c5ac00d7991b6d50b4911c5248bee3ec9d7ec1ff446147",
+   "routes": 2,
+   "stops": 3
+  },
+  {
+   "city": "Nam Định",
+   "path": "v/20261125-6e4c05ce/nam-dinh.json.gz",
+   "bytes": 2922,
+   "sha256": "5d6ce9fe8f96425092cd55bdd34f94b7173f88a8baec894c492961bf4a244106",
+   "routes": 6,
+   "stops": 15
+  },
+  {
+   "city": "Bình Dương",
+   "path": "v/20261125-6e4c05ce/binh-duong.json.gz",
+   "bytes": 4962,
+   "sha256": "362fef163ae2d8f55d98ce00de1b07a064bbabdac17212718afc71c870eb02c8",
+   "routes": 15,
+   "stops": 12
+  },
+  {
+   "city": "Vĩnh Phúc",
+   "path": "v/20261125-6e4c05ce/vinh-phuc.json.gz",
+   "bytes": 3229,
+   "sha256": "feb21ecceeb8f2b33e212bccca56d93c4d346560c14bba48d0700bc6c27e2606",
+   "routes": 14,
+   "stops": 15
+  },
+  {
+   "city": "Bến Tre",
+   "path": "v/20261125-6e4c05ce/ben-tre.json.gz",
+   "bytes": 5326,
+   "sha256": "8e2b9288c0d88a08a81e1eae0506413a126d25de78ed874ca4a4ad05aaebb0b0",
+   "routes": 14,
+   "stops": 10
+  },
+  {
+   "city": "Hải Phòng",
+   "path": "v/20261125-6e4c05ce/hai-phong.json.gz",
+   "bytes": 27758,
+   "sha256": "e904fa5e9fe177763cb249a186468cf571b9fc237929aa7c54d9baa6a505b533",
+   "routes": 20,
+   "stops": 645
+  },
+  {
+   "city": "Hòa Bình",
+   "path": "v/20261125-6e4c05ce/hoa-binh.json.gz",
+   "bytes": 1909,
+   "sha256": "95ca62ced4f931e996b4c5b4c47796bd35a40c347402de1c70c5995427bb86d7",
+   "routes": 2,
+   "stops": 2
+  },
+  {
+   "city": "Hạ Long - Quảng Ninh",
+   "path": "v/20261125-6e4c05ce/ha-long-quang-ninh.json.gz",
+   "bytes": 464,
+   "sha256": "0455544e278b0e09de8e4df033b292d677dabb4765c301637d6b8cdf51650400",
+   "routes": 2,
+   "stops": 4
+  }
+ ]
+}
