@@ -7,7 +7,7 @@ import '../data/transit_data.dart';
 import '../l10n.dart';
 import '../routing/router.dart';
 
-const walkColor = Color(0xFFD97706);
+const walkColor = Color(0xFFB45309);
 const originColor = Color(0xFF4D7C0F);
 const destColor = Color(0xFFDC2626);
 
@@ -26,7 +26,7 @@ Color modeColor(TransitRoute r) {
 Color modeTint(TransitMode m) => switch (m) {
   TransitMode.bus => const Color(0xFF4D7C0F),
   TransitMode.metro => const Color(0xFF7C3AED),
-  TransitMode.ferry => const Color(0xFF0891B2),
+  TransitMode.ferry => const Color(0xFF0E7490),
 };
 
 /// Readable text colour on [c]; some lines are tagged with very light colours.
@@ -141,27 +141,44 @@ class OsmAttribution extends StatelessWidget {
   );
 }
 
-Marker dotMarker(Geo g, Color color, {double size = 14, VoidCallback? onTap}) =>
-    Marker(
-      point: ll(g),
-      width: size + 12,
-      height: size + 12,
-      child: GestureDetector(
-        onTap: onTap,
-        behavior: HitTestBehavior.opaque,
-        child: Center(
-          child: Container(
-            width: size,
-            height: size,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              border: Border.all(color: color, width: 3),
-            ),
+Marker dotMarker(
+  Geo g,
+  Color color, {
+  double size = 14,
+  VoidCallback? onTap,
+  String? label,
+}) => Marker(
+  point: ll(g),
+  width: size + 12,
+  height: size + 12,
+  child: Semantics(
+    label: label,
+    button: onTap != null,
+    child: GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Center(
+        child: Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            border: Border.all(color: color, width: 3),
           ),
         ),
       ),
-    );
+    ),
+  ),
+);
+
+/// Room to keep clear of the floating bar and the sheet when fitting a trip,
+/// shrunk on short screens so some map is always left to fit into.
+EdgeInsets fitPadding(double height, double top, double bottom) {
+  final room = (height - 120).clamp(0.0, double.infinity);
+  final k = top + bottom > room ? room / (top + bottom) : 1.0;
+  return EdgeInsets.fromLTRB(40, top * k, 40, bottom * k);
+}
 
 Marker pinMarker(Geo g, Color color, IconData icon) => Marker(
   point: ll(g),
@@ -221,42 +238,51 @@ Widget mapSheet(
       elevation: 12,
       borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       clipBehavior: Clip.antiAlias,
-      child: ListView(
-        controller: scroll,
-        padding: EdgeInsets.fromLTRB(
-          16,
-          0,
-          16,
-          24 + MediaQuery.paddingOf(context).bottom,
-        ),
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: t.colorScheme.outlineVariant,
-                    borderRadius: BorderRadius.circular(2),
+      // The handle and the map credit stay put while the content scrolls.
+      child: Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
+        child: CustomScrollView(
+          controller: scroll,
+          slivers: [
+            PinnedHeaderSliver(
+              child: ColoredBox(
+                color: t.colorScheme.surface,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: t.colorScheme.outlineVariant,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: Text(
+                          '© OpenStreetMap',
+                          style: t.textTheme.labelSmall?.copyWith(
+                            color: t.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: Text(
-                    '© OpenStreetMap',
-                    style: t.textTheme.labelSmall?.copyWith(
-                      color: t.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
-          ...children(context),
-        ],
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+              sliver: SliverList.list(children: children(context)),
+            ),
+          ],
+        ),
       ),
     ),
   );

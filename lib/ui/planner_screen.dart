@@ -99,13 +99,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       // Bring the sheet back so the trip on the map is not covered.
-      if (_sheet.isAttached) {
-        _sheet.animateTo(
-          _sheetSize,
-          duration: const Duration(milliseconds: 250),
-          curve: Curves.easeOut,
-        );
-      }
+      if (_sheet.isAttached) _sheet.reset();
       if (shown.isEmpty) return;
       final pts = [for (final l in shown.first.legs) ...l.path.map(ll)];
       if (pts.isEmpty) return;
@@ -116,11 +110,10 @@ class _PlannerScreenState extends State<PlannerScreen> {
       _map.fitCamera(
         CameraFit.bounds(
           bounds: LatLngBounds.fromPoints(pts),
-          padding: EdgeInsets.fromLTRB(
-            40,
-            MediaQuery.paddingOf(context).top + 200,
-            40,
-            MediaQuery.sizeOf(context).height * 0.5,
+          padding: fitPadding(
+            _map.camera.nonRotatedSize.height,
+            MediaQuery.paddingOf(context).top + 250,
+            _map.camera.nonRotatedSize.height * _sheetSize + 16,
           ),
         ),
       );
@@ -268,6 +261,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
                         s.routes.isEmpty
                             ? walkColor
                             : modeColor(data.routes[s.routes.first]),
+                        label: s.name,
                         onTap: () => Navigator.of(context).push(
                           MaterialPageRoute(
                             builder: (_) => StopDetailScreen(stop: s),
@@ -651,6 +645,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
           onPressed: () {
             setState(() => _results = null);
             app.clearPlan();
+            _showStops(_map.camera.center);
           },
         ),
         IconButton(

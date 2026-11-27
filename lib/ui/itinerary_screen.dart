@@ -156,10 +156,9 @@ class _ItineraryScreenState extends State<ItineraryScreen> {
                   ? null
                   : CameraFit.bounds(
                       bounds: LatLngBounds.fromPoints(allPoints),
-                      padding: EdgeInsets.fromLTRB(
-                        40,
-                        MediaQuery.paddingOf(context).top + 90,
-                        40,
+                      padding: fitPadding(
+                        size.height,
+                        MediaQuery.paddingOf(context).top + 130,
                         size.height * 0.5 + 20,
                       ),
                     ),
