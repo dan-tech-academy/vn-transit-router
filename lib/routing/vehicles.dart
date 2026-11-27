@@ -53,11 +53,15 @@ List<VehicleEstimate>? estimateVehicles(TransitRoute r, DateTime t) {
 }
 
 /// Minutes after Vietnam midnight of the next departure from the first stop
-/// later on the day of [t], or null.
+/// before the end of the day of [t], or null. Counts what is left of hours
+/// that began the day before and run past midnight.
 int? nextDeparture(TransitRoute r, DateTime t) {
   final now = _vnSeconds(t);
-  for (final m in r.scheduleOn(t) ?? const <int>[]) {
-    if (m * 60 > now) return m % 1440;
+  for (final day in const [-1, 0]) {
+    final departures = r.scheduleOn(t.add(Duration(days: day)));
+    for (final m in departures ?? const <int>[]) {
+      if (day * 86400 + m * 60 > now) return m % 1440;
+    }
   }
   return null;
 }

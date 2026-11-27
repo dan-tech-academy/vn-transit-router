@@ -96,9 +96,19 @@ void main() {
     expect(estimateVehicles(fixed, _at(12, 0)), isEmpty);
     expect(nextDeparture(fixed, _at(12, 0)), 17 * 60 + 15);
 
+    // Hours without a headway on weekdays, one mapped run on Saturday.
+    final mixed = _route('Mo-Fr 06:08-06:15; Sa 06:15');
+    expect(estimateVehicles(mixed, _at(6, 16)), isNull);
+    expect(estimateVehicles(mixed, _at(6, 16, 0, 28))!.single.nextStop, 1);
+    expect(nextDeparture(mixed, _at(5, 0, 0, 28)), 375);
+    expect(estimateVehicles(mixed, _at(6, 16, 0, 29)), isEmpty); // Sunday
+
     final night = _route('Mo 22:00-00:30', headway: 30);
     // 00:31 on Tuesday: the 00:30 run that belongs to Monday's hours.
     final v = estimateVehicles(night, _at(0, 31, 0, 24))!.single;
     expect(v.nextStop, 1);
+    expect(nextDeparture(night, _at(0, 10, 0, 24)), 30);
+    expect(nextDeparture(night, _at(0, 40, 0, 24)), isNull);
+    expect(nextDeparture(night, _at(21, 0)), 22 * 60);
   });
 }

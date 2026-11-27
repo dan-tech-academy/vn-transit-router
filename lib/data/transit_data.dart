@@ -180,26 +180,29 @@ class TransitRoute {
 
   /// When vehicles leave the first stop on the Vietnam-time day of [t], in
   /// minutes after that day's midnight (past 1440 for hours that run over
-  /// midnight): the mapped departures, or one every [headwayMin] through the
-  /// mapped hours. Null when the data has neither.
+  /// midnight): the mapped departures, and one every [headwayMin] through
+  /// the mapped hours. Null when the data does not say for that day: hours
+  /// without a headway, or no times at all.
   List<int>? scheduleOn(DateTime t) {
-    final fixed = departuresOn(t);
-    if (fixed != null) return fixed;
-    final every = headwayMin;
-    if (every == null) return null;
     final today = t.toUtc().add(const Duration(hours: 7)).weekday - 1;
-    final ranges = _rangeRe.allMatches(openingHours).toList();
-    if (ranges.isEmpty) return null;
+    final every = headwayMin;
     final out = <int>{};
     for (final rule in openingHours.toLowerCase().split(';')) {
       if (!_runsOn(rule, today)) continue;
-      for (final m in _rangeRe.allMatches(rule)) {
+      final ranges = _rangeRe.allMatches(rule).toList();
+      final single = _timeRe.allMatches(rule.replaceAll(_rangeRe, '')).toList();
+      if (ranges.isEmpty && single.isEmpty) return null;
+      if (ranges.isNotEmpty && every == null) return null;
+      for (final m in ranges) {
         final open = int.parse(m[1]!) * 60 + int.parse(m[2]!);
         var close = int.parse(m[3]!) * 60 + int.parse(m[4]!);
         if (close <= open) close += 1440;
-        for (var d = open; d <= close; d += every) {
+        for (var d = open; d <= close; d += every!) {
           out.add(d);
         }
+      }
+      for (final m in single) {
+        out.add(int.parse(m[1]!) * 60 + int.parse(m[2]!));
       }
     }
     return out.toList()..sort();
