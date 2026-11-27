@@ -101,7 +101,9 @@ void main() {
     expect(estimateVehicles(mixed, _at(6, 16)), isNull);
     expect(estimateVehicles(mixed, _at(6, 16, 0, 28))!.single.nextStop, 1);
     expect(nextDeparture(mixed, _at(5, 0, 0, 28)), 375);
-    expect(estimateVehicles(mixed, _at(6, 16, 0, 29)), isEmpty); // Sunday
+    expect(estimateVehicles(mixed, _at(6, 16, 0, 29)), isNull); // Sunday
+    final hoursOnly = _route('Mo-Fr 05:00-21:00');
+    expect(estimateVehicles(hoursOnly, _at(12, 0, 0, 28)), isNull);
 
     final night = _route('Mo 22:00-00:30', headway: 30);
     // 00:31 on Tuesday: the 00:30 run that belongs to Monday's hours.

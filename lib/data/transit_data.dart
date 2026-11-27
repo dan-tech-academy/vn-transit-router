@@ -181,8 +181,9 @@ class TransitRoute {
   /// When vehicles leave the first stop on the Vietnam-time day of [t], in
   /// minutes after that day's midnight (past 1440 for hours that run over
   /// midnight): the mapped departures, and one every [headwayMin] through
-  /// the mapped hours. Null when the data does not say for that day: hours
-  /// without a headway, or no times at all.
+  /// the mapped hours. Null when the data does not say: hours without a
+  /// headway on that day, or on other days when that day has no departures,
+  /// or no times at all.
   List<int>? scheduleOn(DateTime t) {
     final today = t.toUtc().add(const Duration(hours: 7)).weekday - 1;
     final every = headwayMin;
@@ -204,6 +205,9 @@ class TransitRoute {
       for (final m in single) {
         out.add(int.parse(m[1]!) * 60 + int.parse(m[2]!));
       }
+    }
+    if (out.isEmpty && every == null && _rangeRe.hasMatch(openingHours)) {
+      return null;
     }
     return out.toList()..sort();
   }
