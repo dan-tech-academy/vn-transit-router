@@ -83,8 +83,8 @@ class _HomeShellState extends State<HomeShell> {
                 const SizedBox(height: 16),
                 Text(
                   tr(
-                    'Không tải được dữ liệu tuyến. Lần đầu mở app cần có mạng để tải dữ liệu.',
-                    'Could not download route data. The app needs a connection the first time it opens.',
+                    'Không tải được dữ liệu tuyến. Hãy kết nối mạng để tải hoặc sửa dữ liệu.',
+                    'Could not load route data. Connect to download or repair it.',
                   ),
                   textAlign: TextAlign.center,
                 ),
