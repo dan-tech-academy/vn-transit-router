@@ -137,147 +137,160 @@ class _ItineraryScreenState extends State<ItineraryScreen> {
     final allPoints = [for (final l in it.legs) ...l.path.map(ll)];
     if (allPoints.isEmpty) allPoints.add(const LatLng(10.7725, 106.6980));
     final samePoint = allPoints.every((p) => p == allPoints.first);
-    final polylines = <Polyline>[
-      for (final l in it.legs)
-        if (l.kind == LegKind.walk)
-          Polyline(
-            points: l.path.map(ll).toList(),
-            strokeWidth: 5,
-            color: walkColor,
-            pattern: const StrokePattern.dotted(),
-          )
-        else
-          Polyline(
-            points: l.path.map(ll).toList(),
-            strokeWidth: 6,
-            color: modeColor(l.route!),
-            borderStrokeWidth: 2,
-            borderColor: Colors.white,
-          ),
-    ];
+    final polylines = legPolylines(it);
     final markers = <Marker>[
       for (final l in it.rides) ...[
         dotMarker(l.path.first, modeColor(l.route!)),
         dotMarker(l.path.last, modeColor(l.route!)),
       ],
-      pinMarker(from.geo, const Color(0xFF4D7C0F), Icons.trip_origin),
-      pinMarker(to.geo, const Color(0xFFDC2626), Icons.location_on),
+      pinMarker(from.geo, originColor, Icons.trip_origin),
+      pinMarker(to.geo, destColor, Icons.location_on),
     ];
+    final size = MediaQuery.sizeOf(context);
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          '${fmtDuration(it.seconds)} · ${AppState.placeName(from)} → ${AppState.placeName(to)}',
-          style: t.textTheme.titleMedium,
-        ),
-        actions: [
-          IconButton(
-            key: const Key('share'),
-            tooltip: tr('Chia sẻ', 'Share'),
-            icon: const Icon(Icons.share_rounded),
-            onPressed: () => SharePlus.instance.share(
-              ShareParams(text: itineraryShareText(it, from, to, departAt)),
-            ),
-          ),
-        ],
-      ),
-      body: Column(
+      body: Stack(
         children: [
-          SizedBox(
-            height: MediaQuery.of(context).size.height * 0.36,
-            child: FlutterMap(
-              options: MapOptions(
-                initialCameraFit: samePoint
-                    ? null
-                    : CameraFit.bounds(
-                        bounds: LatLngBounds.fromPoints(allPoints),
-                        padding: const EdgeInsets.all(36),
+          FlutterMap(
+            options: MapOptions(
+              initialCameraFit: samePoint
+                  ? null
+                  : CameraFit.bounds(
+                      bounds: LatLngBounds.fromPoints(allPoints),
+                      padding: EdgeInsets.fromLTRB(
+                        40,
+                        MediaQuery.paddingOf(context).top + 90,
+                        40,
+                        size.height * 0.5 + 20,
                       ),
-                initialCenter: allPoints.first,
-                initialZoom: 16,
-                interactionOptions: const InteractionOptions(
-                  flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
-                ),
-              ),
-              children: [
-                const OsmTileLayer(),
-                PolylineLayer(polylines: polylines),
-                MarkerLayer(markers: markers),
-                const OsmAttribution(),
-              ],
-            ),
-          ),
-          Container(
-            width: double.infinity,
-            color: t.colorScheme.surfaceContainerHigh,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            child: Text(
-              [
-                '${fmtClock(departAt)} – ${fmtClock(departAt.add(Duration(seconds: it.seconds)))}',
-                if (!it.walkOnly)
-                  it.transfers == 0
-                      ? tr('Đi thẳng', 'Direct')
-                      : tr(
-                          '${it.transfers} lần chuyển',
-                          '${it.transfers} transfer${it.transfers > 1 ? 's' : ''}',
-                        ),
-                tr(
-                  'Đi bộ ${fmtDistance(it.walkMetres)}',
-                  'Walk ${fmtDistance(it.walkMetres)}',
-                ),
-                if (it.fare > 0)
-                  tr('Vé ~${fmtMoney(it.fare)}', 'Fare ~${fmtMoney(it.fare)}'),
-              ].join(' · '),
-              style: t.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
+                    ),
+              initialCenter: allPoints.first,
+              initialZoom: 16,
+              interactionOptions: const InteractionOptions(
+                flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
               ),
             ),
+            children: [
+              const OsmTileLayer(),
+              PolylineLayer(polylines: polylines),
+              MarkerLayer(markers: markers),
+            ],
           ),
-          Expanded(
-            child: ListView(
-              padding: EdgeInsets.fromLTRB(
-                16,
-                12,
-                16,
-                24 + MediaQuery.paddingOf(context).bottom,
-              ),
-              children: [
-                ..._steps(context),
-                const SizedBox(height: 12),
-                if (_streets == false &&
-                    !_tooLate &&
-                    it.legs.any((l) => l.kind == LegKind.walk && l.metres > 0))
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: TextButton.icon(
-                      key: const Key('load-streets'),
-                      icon: const Icon(Icons.directions_walk_rounded, size: 18),
-                      label: Text(
-                        tr(
-                          'Tải đường đi bộ theo phố (cần mạng)',
-                          'Load street walking paths (online)',
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Material(
+                color: t.colorScheme.surface,
+                elevation: 4,
+                borderRadius: BorderRadius.circular(28),
+                child: Row(
+                  children: [
+                    const BackButton(),
+                    Expanded(
+                      child: Text(
+                        '${AppState.placeName(from)} → ${AppState.placeName(to)}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: t.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
-                      onPressed: () {
-                        setState(() => _streets = null);
-                        _loadStreets(context.read<AppState>());
-                      },
+                    ),
+                    IconButton(
+                      key: const Key('share'),
+                      tooltip: tr('Chia sẻ', 'Share'),
+                      icon: const Icon(Icons.share_rounded),
+                      onPressed: () => SharePlus.instance.share(
+                        ShareParams(
+                          text: itineraryShareText(it, from, to, departAt),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          mapSheet(
+            context,
+            initial: 0.5,
+            min: 0.2,
+            max: 0.8,
+            children: (context) => [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    fmtDuration(it.seconds),
+                    style: t.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
-                Text(
-                  '${tr('Thời gian và giá vé là ước tính từ quãng đường và tần suất tuyến, không phải lịch chạy thực tế.', 'Times and fares are estimated from distance and line frequency, not real timetables.')} '
-                  '${switch (_streets) {
-                    null => tr('Đang tải đường đi bộ theo phố...', 'Loading street walking paths...'),
-                    true => tr('Đường đi bộ theo phố từ OSRM (routing.openstreetmap.de).', 'Street walking paths from OSRM (routing.openstreetmap.de).'),
-                    false when _tooLate => tr('Đi bộ theo phố lâu hơn ước tính nên có thể lỡ chuyến xe chạy theo giờ cố định; lộ trình giữ ước tính đường thẳng.', 'Walking along streets takes longer than estimated and may miss a fixed departure; the straight-line estimate is kept.'),
-                    false => tr('Đường đi bộ vẽ theo đường thẳng.', 'Walking is drawn as straight lines.'),
-                  }}',
-                  key: const Key('walk-note'),
-                  style: t.textTheme.bodySmall?.copyWith(
-                    color: t.colorScheme.onSurfaceVariant,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      [
+                        '${fmtClock(departAt)} – ${fmtClock(departAt.add(Duration(seconds: it.seconds)))}',
+                        if (!it.walkOnly)
+                          it.transfers == 0
+                              ? tr('Đi thẳng', 'Direct')
+                              : tr(
+                                  '${it.transfers} lần chuyển',
+                                  '${it.transfers} transfer${it.transfers > 1 ? 's' : ''}',
+                                ),
+                        tr(
+                          'Đi bộ ${fmtDistance(it.walkMetres)}',
+                          'Walk ${fmtDistance(it.walkMetres)}',
+                        ),
+                        if (it.fare > 0)
+                          tr(
+                            'Vé ~${fmtMoney(it.fare)}',
+                            'Fare ~${fmtMoney(it.fare)}',
+                          ),
+                      ].join(' · '),
+                      style: t.textTheme.bodySmall?.copyWith(
+                        color: t.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              ..._steps(context),
+              const SizedBox(height: 12),
+              if (_streets == false &&
+                  !_tooLate &&
+                  it.legs.any((l) => l.kind == LegKind.walk && l.metres > 0))
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    key: const Key('load-streets'),
+                    icon: const Icon(Icons.directions_walk_rounded, size: 18),
+                    label: Text(
+                      tr(
+                        'Tải đường đi bộ theo phố (cần mạng)',
+                        'Load street walking paths (online)',
+                      ),
+                    ),
+                    onPressed: () {
+                      setState(() => _streets = null);
+                      _loadStreets(context.read<AppState>());
+                    },
                   ),
                 ),
-              ],
-            ),
+              Text(
+                '${tr('Thời gian và giá vé là ước tính từ quãng đường và tần suất tuyến, không phải lịch chạy thực tế.', 'Times and fares are estimated from distance and line frequency, not real timetables.')} '
+                '${switch (_streets) {
+                  null => tr('Đang tải đường đi bộ theo phố...', 'Loading street walking paths...'),
+                  true => tr('Đường đi bộ theo phố từ OSRM (routing.openstreetmap.de).', 'Street walking paths from OSRM (routing.openstreetmap.de).'),
+                  false when _tooLate => tr('Đi bộ theo phố lâu hơn ước tính nên có thể lỡ chuyến xe chạy theo giờ cố định; lộ trình giữ ước tính đường thẳng.', 'Walking along streets takes longer than estimated and may miss a fixed departure; the straight-line estimate is kept.'),
+                  false => tr('Đường đi bộ vẽ theo đường thẳng.', 'Walking is drawn as straight lines.'),
+                }}',
+                key: const Key('walk-note'),
+                style: t.textTheme.bodySmall?.copyWith(
+                  color: t.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
           ),
         ],
       ),

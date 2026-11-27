@@ -31,6 +31,14 @@ class TransitApp extends StatelessWidget {
         dynamicSchemeVariant: DynamicSchemeVariant.vibrant,
       ),
       useMaterial3: true,
+      chipTheme: ChipThemeData(
+        backgroundColor: ColorScheme.fromSeed(
+          seedColor: seed,
+          brightness: b,
+          dynamicSchemeVariant: DynamicSchemeVariant.vibrant,
+        ).surface,
+        shape: const StadiumBorder(),
+      ),
       cardTheme: CardThemeData(
         elevation: 0,
         margin: EdgeInsets.zero,
@@ -94,23 +102,34 @@ class _HomeShellState extends State<HomeShell> {
         index: app.tab,
         children: const [PlannerScreen(), RoutesScreen(), NearbyScreen()],
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: app.tab,
-        onDestinationSelected: app.setTab,
-        destinations: [
-          NavigationDestination(
-            icon: const Icon(Icons.alt_route_rounded),
-            label: tr('Tìm đường', 'Plan'),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
+          child: Material(
+            elevation: 6,
+            borderRadius: BorderRadius.circular(32),
+            clipBehavior: Clip.antiAlias,
+            child: NavigationBar(
+              height: 64,
+              selectedIndex: app.tab,
+              onDestinationSelected: app.setTab,
+              destinations: [
+                NavigationDestination(
+                  icon: const Icon(Icons.alt_route_rounded),
+                  label: tr('Tìm đường', 'Plan'),
+                ),
+                NavigationDestination(
+                  icon: const Icon(Icons.directions_bus_rounded),
+                  label: tr('Tuyến', 'Routes'),
+                ),
+                NavigationDestination(
+                  icon: const Icon(Icons.place_rounded),
+                  label: tr('Trạm gần đây', 'Nearby'),
+                ),
+              ],
+            ),
           ),
-          NavigationDestination(
-            icon: const Icon(Icons.directions_bus_rounded),
-            label: tr('Tuyến', 'Routes'),
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.place_rounded),
-            label: tr('Trạm gần đây', 'Nearby'),
-          ),
-        ],
+        ),
       ),
     );
   }

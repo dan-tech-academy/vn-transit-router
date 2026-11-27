@@ -5,8 +5,11 @@ import 'package:latlong2/latlong.dart';
 import '../data/geo.dart';
 import '../data/transit_data.dart';
 import '../l10n.dart';
+import '../routing/router.dart';
 
-const walkColor = Color(0xFF64748B);
+const walkColor = Color(0xFFD97706);
+const originColor = Color(0xFF4D7C0F);
+const destColor = Color(0xFFDC2626);
 
 /// Persistent folder for viewed map tiles; set at startup.
 String? tileCacheDir;
@@ -16,12 +19,19 @@ Color modeColor(TransitRoute r) {
     final v = int.tryParse(r.colour.substring(1), radix: 16);
     if (v != null) return Color(0xFF000000 | v);
   }
-  return switch (r.mode) {
-    TransitMode.bus => const Color(0xFF4D7C0F),
-    TransitMode.metro => const Color(0xFF2563EB),
-    TransitMode.ferry => const Color(0xFF0891B2),
-  };
+  return modeTint(r.mode);
 }
+
+/// One colour per kind of vehicle, whatever colour the line itself has.
+Color modeTint(TransitMode m) => switch (m) {
+  TransitMode.bus => const Color(0xFF4D7C0F),
+  TransitMode.metro => const Color(0xFF7C3AED),
+  TransitMode.ferry => const Color(0xFF0891B2),
+};
+
+/// Readable text colour on [c]; some lines are tagged with very light colours.
+Color onColor(Color c) =>
+    c.computeLuminance() > 0.45 ? const Color(0xFF12422C) : Colors.white;
 
 IconData modeIcon(TransitMode m) => switch (m) {
   TransitMode.bus => Icons.directions_bus_rounded,
@@ -80,16 +90,12 @@ class LineBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            modeIcon(route.mode),
-            size: large ? 18 : 14,
-            color: Colors.white,
-          ),
+          Icon(modeIcon(route.mode), size: large ? 18 : 14, color: onColor(c)),
           const SizedBox(width: 4),
           Text(
             route.label,
             style: TextStyle(
-              color: Colors.white,
+              color: onColor(c),
               fontWeight: FontWeight.w700,
               fontSize: large ? 16 : 13,
             ),
@@ -174,3 +180,84 @@ Marker pinMarker(Geo g, Color color, IconData icon) => Marker(
 
 String fmtDateTime(DateTime t) =>
     '${t.day.toString().padLeft(2, '0')}/${t.month.toString().padLeft(2, '0')} ${fmtClock(t)}';
+
+List<Polyline> legPolylines(Itinerary it) => [
+  for (final l in it.legs)
+    if (l.kind == LegKind.walk)
+      Polyline(
+        points: l.path.map(ll).toList(),
+        strokeWidth: 5,
+        color: walkColor,
+        pattern: const StrokePattern.dotted(),
+      )
+    else
+      Polyline(
+        points: l.path.map(ll).toList(),
+        strokeWidth: 6,
+        color: modeColor(l.route!),
+        borderStrokeWidth: 2,
+        borderColor: Colors.white,
+      ),
+];
+
+/// Sheet over a full-screen map: rounded top, drag handle, map credit.
+Widget mapSheet(
+  BuildContext context, {
+  required double initial,
+  required double min,
+  required double max,
+  DraggableScrollableController? controller,
+  required List<Widget> Function(BuildContext) children,
+}) {
+  final t = Theme.of(context);
+  return DraggableScrollableSheet(
+    controller: controller,
+    initialChildSize: initial,
+    minChildSize: min,
+    maxChildSize: max,
+    snap: true,
+    builder: (context, scroll) => Material(
+      color: t.colorScheme.surface,
+      elevation: 12,
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      clipBehavior: Clip.antiAlias,
+      child: ListView(
+        controller: scroll,
+        padding: EdgeInsets.fromLTRB(
+          16,
+          0,
+          16,
+          24 + MediaQuery.paddingOf(context).bottom,
+        ),
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: t.colorScheme.outlineVariant,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    '© OpenStreetMap',
+                    style: t.textTheme.labelSmall?.copyWith(
+                      color: t.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ...children(context),
+        ],
+      ),
+    ),
+  );
+}
