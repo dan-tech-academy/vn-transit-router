@@ -17,6 +17,7 @@ jobs:
           cache: true
       - run: flutter pub get
       - run: flutter analyze
+      - run: python3 tool/publish_data.py # dist/data, read by data_store_test
       - run: flutter test
 
   ios:

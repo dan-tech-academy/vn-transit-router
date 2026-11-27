@@ -79,16 +79,16 @@ void main() {
   final a = part(
     'A',
     [
-      [10.0, 106.0, 'One'],
-      [10.01, 106.0, 'Shared'],
+      [10.0, 106.0, 'One', 5],
+      [10.01, 106.0, 'Shared', 2],
     ],
     [0, 1],
   );
   final b = part(
     'B',
     [
-      [10.01, 106.0, 'Shared'],
-      [10.02, 106.0, 'Three'],
+      [10.01, 106.0, 'Shared', 2],
+      [10.02, 106.0, 'Three', 0],
     ],
     [0, 1],
   );
@@ -129,8 +129,8 @@ void main() {
     final c = part(
       'C',
       [
-        [11.0, 107.0, 'Four'],
-        [11.01, 107.0, 'Five'],
+        [11.0, 107.0, 'Four', 7],
+        [11.01, 107.0, 'Five', 8],
       ],
       [0, 1],
     );
@@ -170,17 +170,31 @@ void main() {
 
   test('stops shared by two city files are merged', () {
     final data = TransitData.fromParts('g', [a, b]);
-    expect(data.stops.map((s) => s.name), ['One', 'Shared', 'Three']);
-    expect(data.routes[1].stops, [1, 2]);
+    expect(data.stops.map((s) => s.name), ['Three', 'Shared', 'One']);
+    expect(data.routes[0].stops, [2, 1]);
+    expect(data.routes[1].stops, [1, 0]);
     expect(data.stops[1].routes, [0, 1]);
   });
 
+  test('a bad update leaves intact stored data in use', () async {
+    await store().update();
+    final c = part(
+      'C',
+      [
+        [11.0, 107.0, 'Four', 7],
+        [11.01, 107.0, 'Five', 8],
+      ],
+      [0, 1],
+    );
+    publish('2', {'a.gz': a, 'c.gz': c});
+    server['/v/2/c.gz'] = [1, 2, 3];
+    await expectLater(store().update(), throwsFormatException);
+    final bundle = (await store().cached())!;
+    expect(bundle.version, '1');
+    expect(bundle.parts, hasLength(2));
+  });
+
   test('published files rebuild the full dataset', () {
-    final dir = Directory('dist/data');
-    if (!dir.existsSync()) {
-      markTestSkipped('run tool/publish_data.py first');
-      return;
-    }
     final m = jsonDecode(File('dist/data/manifest.json').readAsStringSync());
     final parts = [
       for (final f in m['files'] as List)
@@ -196,7 +210,10 @@ void main() {
       split.routes.map((r) => key(split, r)).toList()..sort(),
       full.routes.map((r) => key(full, r)).toList()..sort(),
     );
-    final used = {for (final r in full.routes) ...r.stops}.length;
-    expect(split.stops.length, used);
+    final used = {for (final r in full.routes) ...r.stops}.toList()..sort();
+    expect(split.stops.map((s) => '${s.lat},${s.lon},${s.name}').toList(), [
+      for (final s in used)
+        '${full.stops[s].lat},${full.stops[s].lon},${full.stops[s].name}',
+    ]);
   });
 }
